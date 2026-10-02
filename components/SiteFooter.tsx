@@ -60,15 +60,15 @@ export default function SiteFooter() {
           <div>
             <p className="font-bold tracking-wide mb-4">ABOUT</p>
             <ul className="space-y-3 text-white/70">
-              <li><Link href="#" className="hover:text-white">CONTACT</Link></li>
-              <li><Link href="#" className="hover:text-white">ABOUT</Link></li>
+              <li><Link href="/contact" className="hover:text-white">CONTACT</Link></li>
+              <li><Link href="/about" className="hover:text-white">ABOUT</Link></li>
             </ul>
           </div>
           <div>
             <p className="font-bold tracking-wide mb-4">FAQ</p>
             <ul className="space-y-3 text-white/70">
-              <li><Link href="#" className="hover:text-white">PRIVACY</Link></li>
-              <li><Link href="#" className="hover:text-white">FAQ</Link></li>
+              <li><Link href="/privacy" className="hover:text-white">PRIVACY</Link></li>
+              <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
             </ul>
           </div>
         </div>

@@ -177,20 +177,33 @@ export const heroSlides = [
 ];
 
 export const navLinks = [
-  { label: "CLOTHING", href: "/#shop" },
-  { label: "ACCESSORIES", href: "/#shop" },
-  { label: "FOOTWEAR", href: "/#shop" },
-  { label: "DETTA COMBO", href: "/#shop" },
+  { label: "CLOTHING", href: "/category/clothing" },
+  { label: "ACCESSORIES", href: "/category/accessories" },
+  { label: "FOOTWEAR", href: "/category/footwear" },
+  { label: "DETTA COMBO", href: "/category/combo" },
 ];
 
 export const drawerLinks = [
-  "CLOTHING",
-  "ACCESSORIES",
-  "FOOTWEAR",
-  "DETTA COMBO",
-  "MY WISHLIST",
-  "CUSTOM DESIGN",
+  { label: "CLOTHING", href: "/category/clothing" },
+  { label: "ACCESSORIES", href: "/category/accessories" },
+  { label: "FOOTWEAR", href: "/category/footwear" },
+  { label: "DETTA COMBO", href: "/category/combo" },
+  { label: "MY WISHLIST", href: "/wishlist" },
+  { label: "CUSTOM DESIGN", href: "/custom-design" },
 ];
+
+export const categories = [
+  { slug: "clothing", label: "CLOTHING" },
+  { slug: "accessories", label: "ACCESSORIES" },
+  { slug: "footwear", label: "FOOTWEAR" },
+  { slug: "combo", label: "DETTA COMBO" },
+] as const;
+
+export type CategorySlug = (typeof categories)[number]["slug"];
+
+export function getCategory(slug: string) {
+  return categories.find((c) => c.slug === slug);
+}
 
 /** Public placeholder image (picsum) — swap for real product shots later. */
 export function img(seed: string, w = 600, h = 750) {

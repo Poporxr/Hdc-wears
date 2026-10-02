@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { drawerLinks, navLinks, products } from "@/lib/products";
+import { useCart } from "@/lib/store";
 
 function IconMenu() {
   return (
@@ -57,6 +58,7 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const { count } = useCart();
 
   const results =
     query.trim().length > 0
@@ -110,9 +112,14 @@ export default function Header() {
             >
               <IconSearch />
             </button>
-            <button aria-label="Cart" className="p-1 relative">
+            <Link href="/cart" aria-label="Cart" className="p-1 relative">
               <IconCart />
-            </button>
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-detta-navy text-white text-[10px] font-bold flex items-center justify-center">
+                  {count}
+                </span>
+              )}
+            </Link>
             <div className="relative">
               <button
                 aria-label="Account"
@@ -164,12 +171,12 @@ export default function Header() {
             <nav className="flex flex-col gap-6">
               {drawerLinks.map((l) => (
                 <Link
-                  key={l}
-                  href="/#shop"
+                  key={l.label}
+                  href={l.href}
                   onClick={() => setDrawerOpen(false)}
                   className="font-bold text-lg tracking-wide"
                 >
-                  {l}
+                  {l.label}
                 </Link>
               ))}
             </nav>
