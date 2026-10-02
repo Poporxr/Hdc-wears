@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <InfoPage title="ABOUT HDC WEARS">
       <p>
-        HDC — <strong>High Dream Chasers</strong> — is a Ghana-based
+        HDC — <strong>High Dream Chasers</strong> — is a Nigeria-based
         streetwear label making quality everyday pieces designed for comfort,
         confidence, and clean personal style — from daily essentials to
         custom looks made to feel like yours.

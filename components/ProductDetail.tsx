@@ -56,18 +56,22 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const [qty, setQty] = useState(1);
   const [view, setView] = useState(0);
   const [flip, setFlip] = useState<{ from: number; to: number } | null>(null);
+  const [spinSrc, setSpinSrc] = useState<number | null>(null);
   const activeView = flip ? flip.to : view;
   const product = getProduct(slug);
 
-  /** Turn to another image like flipping a book page. */
+  /** Spin the image a full 360, swapping views at the edge-on midpoint. */
   const goTo = (n: number) => {
     if (!product) return;
     const target = Math.max(0, Math.min(n, product.images.length - 1));
     if (target === view || flip) return;
     setFlip({ from: view, to: target });
+    setSpinSrc(view);
+    setTimeout(() => setSpinSrc(target), 325);
     setTimeout(() => {
       setView(target);
       setFlip(null);
+      setSpinSrc(null);
     }, 650);
   };
   const [added, setAdded] = useState(false);
@@ -126,24 +130,16 @@ export default function ProductDetail({ slug }: { slug: string }) {
                 if (dx > 40) goTo(view - 1);
               }}
             >
-              {/* next page underneath */}
+              {/* spinning image: swaps views at the edge-on midpoint */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                key={flip ? `to-${flip.to}` : `view-${view}`}
-                src={img(product.images[activeView], 800, 1000)}
+                key={flip ? `spin-${flip.from}-${flip.to}` : `view-${view}`}
+                src={img(product.images[flip ? (spinSrc ?? flip.from) : view], 800, 1000)}
                 alt={`${product.name} — view ${activeView + 1}`}
-                className="absolute inset-0 w-full h-full object-cover"
+                className={`absolute inset-0 w-full h-full object-cover ${
+                  flip ? "animate-spin360" : ""
+                }`}
               />
-              {/* turning page on top */}
-              {flip && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={img(product.images[flip.from], 800, 1000)}
-                  alt=""
-                  aria-hidden
-                  className="absolute inset-0 w-full h-full object-cover animate-page-turn"
-                />
-              )}
               {/* vertical dots, left edge */}
               <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                 {product.images.map((_, i) => (

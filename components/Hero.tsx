@@ -8,41 +8,6 @@ const EASE = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 const N = heroSlides.length;
 const TRACK_MS = 800;
 
-function DotsRow({
-  active,
-  goTo,
-  desktop,
-}: {
-  active: number;
-  goTo: (i: number) => void;
-  desktop?: boolean;
-}) {
-  return (
-    <div
-      className={`flex ${desktop ? "gap-2 px-16 pb-8 -mt-2" : "gap-1.5 px-5 pb-5 -mt-1"} ${
-        desktop ? "hidden md:flex" : "md:hidden"
-      }`}
-    >
-      {heroSlides.map((_, i) => (
-        <button
-          key={i}
-          aria-label={`Go to slide ${i + 1}`}
-          onClick={() => goTo(i)}
-          className={`${desktop ? "h-1.5" : "h-1"} rounded-full transition-all duration-500 ${EASE} ${
-            i === active
-              ? desktop
-                ? "w-8 bg-black"
-                : "w-6 bg-black"
-              : desktop
-                ? "w-3 bg-neutral-300"
-                : "w-2 bg-neutral-300"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
 function MobileSlide({ i, active }: { i: number; active: boolean }) {
   const slide = heroSlides[i % N];
   return (
@@ -74,12 +39,13 @@ function MobileSlide({ i, active }: { i: number; active: boolean }) {
         <div className="w-[48%] shrink-0 relative overflow-hidden">
           <div
             key={`m-${i}-${active}`}
-            className={`absolute inset-0 ${active ? "animate-hero-in-right" : ""}`}
+            className={`absolute inset-0 hero-fade-left ${active ? "animate-hero-in-right" : ""}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={slide.imageMobile}
               alt={slide.title}
+              fetchPriority="high"
               className="absolute inset-0 w-full h-full object-cover object-top"
             />
           </div>
@@ -120,12 +86,13 @@ function DesktopSlide({ i, active }: { i: number; active: boolean }) {
         <div className="relative h-72 md:h-[520px] overflow-hidden">
           <div
             key={`m-${i}-${active}`}
-            className={`absolute inset-0 ${active ? "animate-hero-in-right" : ""}`}
+            className={`absolute inset-0 hero-fade-left ${active ? "animate-hero-in-right" : ""}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={slide.imageDesktop}
               alt={slide.title}
+              fetchPriority="high"
               className="absolute inset-0 w-full h-full object-cover"
             />
           </div>
@@ -139,11 +106,6 @@ export default function Hero() {
   // index ranges 0..N; index N renders a clone of slide 0 for a seamless loop
   const [index, setIndex] = useState(0);
   const [instant, setInstant] = useState(false);
-
-  const goTo = (i: number) => {
-    setInstant(false);
-    setIndex(i);
-  };
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -172,7 +134,6 @@ export default function Hero() {
     }
   }, [instant]);
 
-  const activeDot = index % N;
   const trackClass = `flex ${EASE} ${
     instant ? "" : "transition-transform duration-[800ms]"
   }`;
@@ -189,7 +150,6 @@ export default function Hero() {
             <MobileSlide key={i} i={i} active={index === i} />
           ))}
         </div>
-        <DotsRow active={activeDot} goTo={goTo} />
       </div>
 
       {/* Desktop */}
@@ -199,7 +159,6 @@ export default function Hero() {
             <DesktopSlide key={i} i={i} active={index === i} />
           ))}
         </div>
-        <DotsRow active={activeDot} goTo={goTo} desktop />
       </div>
     </section>
   );

@@ -5,7 +5,7 @@ export type Product = {
   slug: string;
   name: string;
   color: string;
-  price: number; // in Ghana Cedis
+  price: number; // in Naira
   category: "clothing" | "accessories" | "footwear" | "combo";
   inStock: boolean;
   description: string;
@@ -106,32 +106,32 @@ export const heroSlides = [
     title: "HDC BANDANA TEE",
     copy: "Acid-wash oversized tee with the bandana back print. High Dream Chasers.",
     cta: "SHOP NOW",
-    imageMobile: "https://files.catbox.moe/odbueu.webp",
-    imageDesktop: "https://files.catbox.moe/orbhzs.webp",
+    imageMobile: "https://files.catbox.moe/rnzjg8.webp",
+    imageDesktop: "https://files.catbox.moe/qe85kd.webp",
   },
   {
     eyebrow: "NEW DROP",
     title: "CHASE HIGHER",
     copy: "The black colorway. Same heavyweight bandana tee, same dream-chaser energy.",
     cta: "SHOP NOW",
-    imageMobile: "https://files.catbox.moe/jivyuz.webp",
-    imageDesktop: "https://files.catbox.moe/qdouux.webp",
+    imageMobile: "https://files.catbox.moe/au2hds.webp",
+    imageDesktop: "https://files.catbox.moe/gnfpq8.webp",
   },
   {
     eyebrow: "NEW DROP",
     title: "DREAM LOUD",
     copy: "The green colorway. Oversized fit, bandana back print, made to be seen.",
     cta: "SHOP NOW",
-    imageMobile: "https://files.catbox.moe/wmnq1q.webp",
-    imageDesktop: "https://files.catbox.moe/f83zh3.webp",
+    imageMobile: "https://files.catbox.moe/ny2v12.webp",
+    imageDesktop: "https://files.catbox.moe/uhgr9n.webp",
   },
   {
     eyebrow: "NEW DROP",
     title: "STAY TRUE",
     copy: "The blue colorway. High Dream Chasers, front and back.",
     cta: "SHOP NOW",
-    imageMobile: "https://files.catbox.moe/tx47mn.webp",
-    imageDesktop: "https://files.catbox.moe/o30yas.webp",
+    imageMobile: "https://files.catbox.moe/taocf3.webp",
+    imageDesktop: "https://files.catbox.moe/gjlisl.webp",
   },
 ];
 export const navLinks = [

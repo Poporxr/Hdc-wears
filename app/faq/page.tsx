@@ -3,7 +3,7 @@ import InfoPage from "@/components/InfoPage";
 const faqs = [
   {
     q: "Where do you deliver?",
-    a: "We deliver across Ghana. Delivery fees and timelines are confirmed at checkout based on your location.",
+    a: "We deliver across Nigeria. Delivery fees and timelines are confirmed at checkout based on your location.",
   },
   {
     q: "How do sizes run?",
