@@ -34,7 +34,7 @@ export default function SiteFooter() {
           <span className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center font-black text-sm">
             DW
           </span>
-          <span className="font-black tracking-[0.25em] text-lg">DETTAWEARS</span>
+          <span className="font-black tracking-[0.25em] text-lg">HDCWEARS</span>
         </div>
         <p className="text-white/80 text-sm leading-relaxed max-w-md">
           Quality everyday pieces designed for comfort, confidence, and clean
@@ -74,7 +74,7 @@ export default function SiteFooter() {
         </div>
 
         <p className="text-center text-white/60 text-xs mt-10">
-          © 2026 Dettawears. All rights reserved.
+          © 2026 HDC Wears. All rights reserved.
         </p>
       </div>
     </footer>

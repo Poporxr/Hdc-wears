@@ -41,7 +41,7 @@ export default function CartPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={img(p.imageSeed, 200, 240)}
+                        src={img(p.images[0], 200, 240)}
                         alt={p.name}
                         className="w-full h-full object-cover"
                       />

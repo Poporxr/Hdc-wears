@@ -30,7 +30,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
       <div className="text-center pt-10 pb-6">
-        <span className="font-black text-3xl tracking-tight">DETTA</span>
+        <span className="font-black text-3xl tracking-tight">HDC</span>
         <span className="block text-xs font-bold tracking-[0.35em] -mt-0.5">— WEARS —</span>
       </div>
       <div className="mx-4 bg-white rounded-2xl shadow-sm p-6 max-w-md w-[calc(100%-2rem)] sm:mx-auto">

@@ -2,11 +2,12 @@ import InfoPage from "@/components/InfoPage";
 
 export default function AboutPage() {
   return (
-    <InfoPage title="ABOUT DETTA WEARS">
+    <InfoPage title="ABOUT HDC WEARS">
       <p>
-        Detta Wears is a Ghana-based streetwear label making quality everyday
-        pieces designed for comfort, confidence, and clean personal style —
-        from daily essentials to custom looks made to feel like yours.
+        HDC — <strong>High Dream Chasers</strong> — is a Ghana-based
+        streetwear label making quality everyday pieces designed for comfort,
+        confidence, and clean personal style — from daily essentials to
+        custom looks made to feel like yours.
       </p>
       <p>
         Every drop is designed in-house and produced in limited runs. When a

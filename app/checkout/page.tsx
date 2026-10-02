@@ -24,7 +24,7 @@ export default function CheckoutPage() {
           </div>
           <h1 className="font-display font-black text-3xl mt-6">ORDER PLACED</h1>
           <p className="text-neutral-500 text-sm mt-3">
-            Thanks for shopping with Detta Wears. This is a demo checkout —
+            Thanks for shopping with HDC Wears. This is a demo checkout —
             no payment was processed and no order was created.
           </p>
           <Link
@@ -104,7 +104,7 @@ export default function CheckoutPage() {
                       <span className="relative w-16 h-20 shrink-0 bg-[#f1f2f5] rounded-lg overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={img(p.imageSeed, 160, 200)}
+                          src={img(p.images[0], 160, 200)}
                           alt={p.name}
                           className="w-full h-full object-cover"
                         />

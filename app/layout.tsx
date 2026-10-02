@@ -15,9 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Shop DETTA by VENDETTA",
+  title: "HDC Wears — High Dream Chasers",
   description:
-    "Detta Wears — quality everyday pieces designed for comfort, confidence, and clean personal style.",
+    "HDC Wears — quality everyday pieces designed for comfort, confidence, and clean personal style.",
 };
 
 export default function RootLayout({

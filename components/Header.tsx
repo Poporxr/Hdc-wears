@@ -100,7 +100,7 @@ export default function Header() {
           </div>
 
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 text-center leading-none select-none">
-            <span className="block font-black tracking-tight text-2xl">DETTA</span>
+            <span className="block font-black tracking-tight text-2xl">HDC</span>
             <span className="block text-[11px] font-bold tracking-[0.35em] -mt-0.5">— WEARS —</span>
           </Link>
 
@@ -161,7 +161,7 @@ export default function Header() {
           <aside className="absolute left-0 top-0 h-full w-[78%] max-w-xs bg-white shadow-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <span className="font-black text-xl leading-none text-center">
-                DETTA
+                HDC
                 <span className="block text-[10px] tracking-[0.35em]">— WEARS —</span>
               </span>
               <button aria-label="Close menu" onClick={() => setDrawerOpen(false)}>

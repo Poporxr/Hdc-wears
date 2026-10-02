@@ -10,7 +10,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="aspect-[4/5] overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={img(product.imageSeed, 600, 750)}
+          src={img(product.images[0], 600, 750)}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

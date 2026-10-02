@@ -1,6 +1,6 @@
 # HDC Wears
 
-A Next.js (App Router) replica of the Detta Wears storefront — mobile-first,
+A Next.js (App Router) replica of the HDC Wears storefront — mobile-first,
 built from reference screenshots.
 
 ## Status
