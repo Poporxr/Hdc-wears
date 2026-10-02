@@ -11,6 +11,7 @@ import {
   img,
   youMightLike,
 } from "@/lib/products";
+import { useCart, useWishlist } from "@/lib/store";
 
 function IconHeart({ filled }: { filled: boolean }) {
   return (
@@ -53,7 +54,16 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const [size, setSize] = useState("L");
   const [qty, setQty] = useState(1);
   const [backView, setBackView] = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
+  const [added, setAdded] = useState(false);
+  const { add } = useCart();
+  const { toggle, has } = useWishlist();
+  const wishlisted = has(slug);
+
+  const handleAdd = () => {
+    add(slug, size, qty);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  };
 
   const product = getProduct(slug);
   if (!product) {
@@ -156,6 +166,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
             <div className="flex gap-3 mt-5">
               <button
                 disabled={!product.inStock}
+                onClick={handleAdd}
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg font-bold text-sm tracking-wide ${
                   product.inStock
                     ? "bg-detta-navy text-white hover:opacity-90"
@@ -163,11 +174,15 @@ export default function ProductDetail({ slug }: { slug: string }) {
                 }`}
               >
                 <IconCart />
-                {product.inStock ? "ADD TO CART" : "OUT OF STOCK"}
+                {!product.inStock
+                  ? "OUT OF STOCK"
+                  : added
+                    ? "ADDED ✓"
+                    : "ADD TO CART"}
               </button>
               <button
                 aria-label="Add to wishlist"
-                onClick={() => setWishlisted((v) => !v)}
+                onClick={() => toggle(slug)}
                 className="w-[52px] rounded-lg border-2 border-detta-navy text-detta-navy flex items-center justify-center"
               >
                 <IconHeart filled={wishlisted} />
