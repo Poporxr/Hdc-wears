@@ -20,6 +20,23 @@ export function formatPrice(n: number) {
   return `${CURRENCY}${formatted}`;
 }
 
+/** Map a product color name to a swatch hex. */
+export function colorHex(color: string): string {
+  const map: Record<string, string> = {
+    Green: "#2f7a4d",
+    Red: "#a83232",
+    Black: "#111111",
+    Blue: "#2b4d7a",
+    White: "#f5f5f5",
+    Pink: "#f4b8c1",
+    "Sea Blue": "#3aa6b9",
+    "Olive Green": "#6b7a3a",
+    "Charcoal Gray": "#3a3a3a",
+    Gray: "#8a8a8a",
+  };
+  return map[color] ?? "#111111";
+}
+
 export const products: Product[] = [
   {
     slug: "hdc-bandana-tee-green",
@@ -81,151 +98,42 @@ export const products: Product[] = [
     ],
     sizes: ["S", "M", "L", "XL"],
   },
-  {
-    slug: "grace-greatness-glory",
-    name: "GRACE GREATNESS GLORY",
-    color: "White",
-    price: 150.0,
-    category: "clothing",
-    inStock: false,
-    description:
-      "Beauty in spirit is Grace; Greatness in legacy is Glory. Eye-catchy design with an evocative quote. A 260gsm 100% cotton Ts.",
-    images: ["hdc-ggg-front", "hdc-ggg-back", "hdc-ggg-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "only-through-jesus-001",
-    name: "ONLY THROUGH JESUS 001",
-    color: "Black",
-    price: 150.0,
-    category: "clothing",
-    inStock: false,
-    description:
-      "A 260gsm 100% cotton heavy tee featuring our debut edition of the 'Only Through Jesus' design. Inspired by John 14:6.",
-    images: ["hdc-otj-front", "hdc-otj-back", "hdc-otj-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "wdwv-001-de",
-    name: "WDWV 001 DE",
-    color: "Pink",
-    price: 180.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "Soft-touch heavyweight tee with the signature WDWV chest print. 260gsm 100% cotton, relaxed fit.",
-    images: ["hdc-wdwv-front", "hdc-wdwv-back", "hdc-wdwv-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "inosuke-insp-cap",
-    name: "INOSUKE INSP. CAP",
-    color: "Sea Blue",
-    price: 60.0,
-    category: "accessories",
-    inStock: true,
-    description:
-      "Trucker cap inspired by Inosuke. Breathable mesh back, adjustable snap closure.",
-    images: ["hdc-inosuke-cap", "hdc-inosuke-cap-back", "hdc-inosuke-cap-detail"],
-    sizes: ["One Size"],
-  },
-  {
-    slug: "hdc-cap-rand-01",
-    name: "HDC CAP RAND 01",
-    color: "Olive Green",
-    price: 60.0,
-    category: "accessories",
-    inStock: true,
-    description:
-      "Random-series trucker cap in olive green with the skull panel print.",
-    images: ["hdc-cap-rand", "hdc-cap-rand-back", "hdc-cap-rand-detail"],
-    sizes: ["One Size"],
-  },
-  {
-    slug: "free-your-mind",
-    name: "FREE YOUR MIND",
-    color: "White",
-    price: 150.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "CALM MIND, WARM HEART, HIDDEN SCARS. Sleeveless tank in breathable cotton.",
-    images: ["hdc-fym-front", "hdc-fym-back", "hdc-fym-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "hdcwear-rand-001",
-    name: "HDCWEAR RAND. 001",
-    color: "Charcoal Gray",
-    price: 180.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "First drop of the random series. Heavyweight charcoal tee with tonal chest hit.",
-    images: ["hdc-rand001-front", "hdc-rand001-back", "hdc-rand001-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "bad-decisions-ts",
-    name: "BAD DECISIONS Ts",
-    color: "Cream",
-    price: 180.0,
-    category: "clothing",
-    inStock: false,
-    description:
-      "Cream heavyweight tee from the Bad Decisions capsule. 260gsm 100% cotton.",
-    images: ["hdc-bd-front", "hdc-bd-back", "hdc-bd-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "inosuke-insp-001",
-    name: "INOSUKE INSP. 001",
-    color: "White",
-    price: 180.0,
-    category: "clothing",
-    inStock: false,
-    description:
-      "Debut Inosuke-inspired graphic tee. Bold back print, 260gsm cotton.",
-    images: ["hdc-ino001-front", "hdc-ino001-back", "hdc-ino001-front-detail"],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "nike-air-force-1",
-    name: "Nike Air Force 1",
-    color: "Triple White",
-    price: 400.0,
-    category: "footwear",
-    inStock: true,
-    description: "The classic. Full-grain leather, heritage hoops style.",
-    images: ["hdc-af1", "hdc-af1-back", "hdc-af1-detail"],
-    sizes: ["40", "41", "42", "43", "44", "45"],
-  },
 ];
 
 export const heroSlides = [
   {
-    eyebrow: "NEW RELEASE !!",
-    title: "F*CK PERFECTION",
-    copy: "Live on your own terms, embrace authenticity, and let go of the need for perfection.",
+    eyebrow: "NEW DROP",
+    title: "HDC BANDANA TEE",
+    copy: "Acid-wash oversized tee with the bandana back print. High Dream Chasers.",
     cta: "SHOP NOW",
-    imageSeed: "hdc-hero-perfection",
+    imageMobile: "https://files.catbox.moe/g6s38p.jpg",
+    imageDesktop: "https://files.catbox.moe/gegpxh.jpg",
   },
   {
-    eyebrow: "NEW RELEASE !!",
-    title: "GRACE GREATNESS GLORY",
-    copy: "Beauty in spirit is Grace; Greatness in legacy is Glory. The new drop is here.",
+    eyebrow: "NEW DROP",
+    title: "CHASE HIGHER",
+    copy: "The black colorway. Same heavyweight bandana tee, same dream-chaser energy.",
     cta: "SHOP NOW",
-    imageSeed: "hdc-hero-ggg",
+    imageMobile: "https://files.catbox.moe/xepzz5.jpg",
+    imageDesktop: "https://files.catbox.moe/4fkin3.jpg",
   },
   {
-    eyebrow: "NEW RELEASE !!",
-    title: "INOSUKE INSP. COMBO",
-    copy: "A stylish combo featuring the INOSUKE INSP. cap and other complementary items.",
+    eyebrow: "NEW DROP",
+    title: "DREAM LOUD",
+    copy: "The green colorway. Oversized fit, bandana back print, made to be seen.",
     cta: "SHOP NOW",
-    imageSeed: "hdc-hero-combo",
+    imageMobile: "https://files.catbox.moe/8rp56r.jpg",
+    imageDesktop: "https://files.catbox.moe/fx4e8n.jpg",
+  },
+  {
+    eyebrow: "NEW DROP",
+    title: "STAY TRUE",
+    copy: "The blue colorway. High Dream Chasers, front and back.",
+    cta: "SHOP NOW",
+    imageMobile: "https://files.catbox.moe/xn94og.jpg",
+    imageDesktop: "https://files.catbox.moe/88l3xc.jpg",
   },
 ];
-
 export const navLinks = [
   { label: "CLOTHING", href: "/category/clothing" },
   { label: "ACCESSORIES", href: "/category/accessories" },

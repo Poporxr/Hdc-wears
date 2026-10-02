@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
 import {
+  colorHex,
   formatPrice,
   getProduct,
   img,
@@ -54,6 +55,21 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const [size, setSize] = useState("L");
   const [qty, setQty] = useState(1);
   const [view, setView] = useState(0);
+  const [flip, setFlip] = useState<{ from: number; to: number } | null>(null);
+  const activeView = flip ? flip.to : view;
+  const product = getProduct(slug);
+
+  /** Turn to another image like flipping a book page. */
+  const goTo = (n: number) => {
+    if (!product) return;
+    const target = Math.max(0, Math.min(n, product.images.length - 1));
+    if (target === view || flip) return;
+    setFlip({ from: view, to: target });
+    setTimeout(() => {
+      setView(target);
+      setFlip(null);
+    }, 650);
+  };
   const [added, setAdded] = useState(false);
   const { add } = useCart();
   const { toggle, has } = useWishlist();
@@ -65,7 +81,6 @@ export default function ProductDetail({ slug }: { slug: string }) {
     setTimeout(() => setAdded(false), 1800);
   };
 
-  const product = getProduct(slug);
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
@@ -98,7 +113,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
         <div className="grid md:grid-cols-2 gap-6 md:gap-8">
           <div className="relative">
             <div
-              className="bg-[#f1f2f5] rounded-2xl overflow-hidden aspect-[4/5] relative"
+              className="bg-[#f1f2f5] rounded-2xl overflow-hidden aspect-[4/5] relative flip-perspective"
               onTouchStart={(e) => {
                 const x = e.touches[0].clientX;
                 (e.currentTarget as any)._sx = x;
@@ -107,26 +122,37 @@ export default function ProductDetail({ slug }: { slug: string }) {
                 const sx = (e.currentTarget as any)._sx;
                 if (sx == null) return;
                 const dx = e.changedTouches[0].clientX - sx;
-                if (dx < -40) setView((v) => Math.min(v + 1, product.images.length - 1));
-                if (dx > 40) setView((v) => Math.max(v - 1, 0));
+                if (dx < -40) goTo(view + 1);
+                if (dx > 40) goTo(view - 1);
               }}
             >
+              {/* next page underneath */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                key={view}
-                src={img(product.images[view], 800, 1000)}
-                alt={`${product.name} — view ${view + 1}`}
-                className="w-full h-full object-cover"
+                key={flip ? `to-${flip.to}` : `view-${view}`}
+                src={img(product.images[activeView], 800, 1000)}
+                alt={`${product.name} — view ${activeView + 1}`}
+                className="absolute inset-0 w-full h-full object-cover"
               />
+              {/* turning page on top */}
+              {flip && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={img(product.images[flip.from], 800, 1000)}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 w-full h-full object-cover animate-page-turn"
+                />
+              )}
               {/* vertical dots, left edge */}
               <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                 {product.images.map((_, i) => (
                   <button
                     key={i}
                     aria-label={`View image ${i + 1}`}
-                    onClick={() => setView(i)}
+                    onClick={() => goTo(i)}
                     className={`w-2 h-2 rounded-full transition-all ${
-                      i === view ? "bg-teal-500 scale-125" : "bg-white/70"
+                      i === activeView ? "bg-teal-500 scale-125" : "bg-white/70"
                     }`}
                   />
                 ))}
@@ -135,18 +161,16 @@ export default function ProductDetail({ slug }: { slug: string }) {
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                 <button
                   aria-label="Previous image"
-                  onClick={() => setView((v) => Math.max(v - 1, 0))}
-                  disabled={view === 0}
+                  onClick={() => goTo(view - 1)}
+                  disabled={activeView === 0}
                   className="w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center disabled:opacity-30"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
                 </button>
                 <button
                   aria-label="Next image"
-                  onClick={() =>
-                    setView((v) => Math.min(v + 1, product.images.length - 1))
-                  }
-                  disabled={view === product.images.length - 1}
+                  onClick={() => goTo(view + 1)}
+                  disabled={activeView === product.images.length - 1}
                   className="w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center disabled:opacity-30"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -154,10 +178,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
               </div>
             </div>
             <button
-              onClick={() => setView(view === 0 ? product.images.length - 1 : 0)}
+              onClick={() => goTo(activeView === 0 ? product.images.length - 1 : 0)}
               className="absolute top-4 right-4 bg-white border border-neutral-200 rounded-full px-4 py-2 text-xs font-semibold shadow"
             >
-              {view === 0 ? "Back View" : "Front View"}
+              {activeView === 0 ? "Back View" : "Front View"}
             </button>
           </div>
 
@@ -183,7 +207,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
             <p className="text-sm font-semibold mt-4">Color: {product.color}</p>
             <div className="flex gap-2 mt-2">
-              <span className="w-8 h-8 rounded-md bg-black border-2 border-black" />
+              <span
+                className="w-8 h-8 rounded-md border-2 border-black"
+                style={{ backgroundColor: colorHex(product.color) }}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-4">

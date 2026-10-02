@@ -82,7 +82,7 @@ export default function Header() {
             <button
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
-              className="p-1 hidden sm:block"
+              className="p-1"
             >
               <IconSearch />
             </button>
@@ -105,13 +105,6 @@ export default function Header() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <button
-              aria-label="Search"
-              onClick={() => setSearchOpen(true)}
-              className="p-1 sm:hidden"
-            >
-              <IconSearch />
-            </button>
             <Link href="/cart" aria-label="Cart" className="p-1 relative">
               <IconCart />
               {count > 0 && (
