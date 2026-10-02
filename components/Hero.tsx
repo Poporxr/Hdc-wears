@@ -100,15 +100,22 @@ export default function Hero() {
   const [index, setIndex] = useState(0);
   const [images, setImages] = useState<Record<string, string> | null>(null);
 
-  // Hero artwork ships as data URIs in a JSON so it deploys with the site
+  // Hero artwork ships as data URIs in per-color JSON files so it deploys with the site
   useEffect(() => {
-    const file =
-      window.innerWidth < 768
-        ? "/hero-images-mobile.json"
-        : "/hero-images-desktop.json";
-    fetch(file)
-      .then((r) => r.json())
-      .then((d) => setImages(d))
+    const kind = window.innerWidth < 768 ? "mobile" : "desktop";
+    const colors = ["red", "black", "green", "blue"];
+    Promise.all(
+      colors.map((c) =>
+        fetch(`/hero-images-${kind}-${c}.json`).then((r) => r.json())
+      )
+    )
+      .then((arr) => {
+        const d: Record<string, string> = {};
+        colors.forEach((c, i) => {
+          d[c] = arr[i].src;
+        });
+        setImages(d);
+      })
       .catch(() => {});
   }, []);
 
