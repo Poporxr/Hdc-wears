@@ -5,14 +5,54 @@ import { useEffect, useState } from "react";
 import { heroSlides } from "@/lib/products";
 
 const EASE = "ease-[cubic-bezier(0.22,1,0.36,1)]";
+const N = heroSlides.length;
+const TRACK_MS = 800;
 
-function MobileSlide({ i }: { i: number }) {
-  const slide = heroSlides[i];
+function DotsRow({
+  active,
+  goTo,
+  desktop,
+}: {
+  active: number;
+  goTo: (i: number) => void;
+  desktop?: boolean;
+}) {
+  return (
+    <div
+      className={`flex ${desktop ? "gap-2 px-16 pb-8 -mt-2" : "gap-1.5 px-5 pb-5 -mt-1"} ${
+        desktop ? "hidden md:flex" : "md:hidden"
+      }`}
+    >
+      {heroSlides.map((_, i) => (
+        <button
+          key={i}
+          aria-label={`Go to slide ${i + 1}`}
+          onClick={() => goTo(i)}
+          className={`${desktop ? "h-1.5" : "h-1"} rounded-full transition-all duration-500 ${EASE} ${
+            i === active
+              ? desktop
+                ? "w-8 bg-black"
+                : "w-6 bg-black"
+              : desktop
+                ? "w-3 bg-neutral-300"
+                : "w-2 bg-neutral-300"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MobileSlide({ i, active }: { i: number; active: boolean }) {
+  const slide = heroSlides[i % N];
   return (
     <div className="w-full shrink-0">
       <div className="flex items-stretch min-h-[340px]">
         <div className="flex-1 pl-5 pr-0 py-8 relative z-10 -mr-12 flex flex-col justify-center">
-          <div key={i} className="animate-hero-text-in">
+          <div
+            key={`t-${i}-${active}`}
+            className={active ? "animate-hero-in-left" : ""}
+          >
             <p className="text-[10px] font-extrabold tracking-[0.18em] mb-2">
               {slide.eyebrow}
             </p>
@@ -32,25 +72,33 @@ function MobileSlide({ i }: { i: number }) {
           </Link>
         </div>
         <div className="w-[48%] shrink-0 relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.imageMobile}
-            alt={slide.title}
-            className="absolute inset-0 w-full h-full object-cover object-top"
-          />
+          <div
+            key={`m-${i}-${active}`}
+            className={`absolute inset-0 ${active ? "animate-hero-in-right" : ""}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.imageMobile}
+              alt={slide.title}
+              className="absolute inset-0 w-full h-full object-cover object-top"
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function DesktopSlide({ i }: { i: number }) {
-  const slide = heroSlides[i];
+function DesktopSlide({ i, active }: { i: number; active: boolean }) {
+  const slide = heroSlides[i % N];
   return (
     <div className="w-full shrink-0">
       <div className="grid grid-cols-2 items-center">
         <div className="px-6 py-10 md:py-20 md:pl-16 max-w-xl">
-          <div key={i} className="animate-hero-text-in">
+          <div
+            key={`t-${i}-${active}`}
+            className={active ? "animate-hero-in-left" : ""}
+          >
             <p className="text-xs font-extrabold tracking-[0.2em] mb-3">
               {slide.eyebrow}
             </p>
@@ -70,12 +118,17 @@ function DesktopSlide({ i }: { i: number }) {
           </Link>
         </div>
         <div className="relative h-72 md:h-[520px] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.imageDesktop}
-            alt={slide.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <div
+            key={`m-${i}-${active}`}
+            className={`absolute inset-0 ${active ? "animate-hero-in-right" : ""}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.imageDesktop}
+              alt={slide.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -83,68 +136,70 @@ function DesktopSlide({ i }: { i: number }) {
 }
 
 export default function Hero() {
+  // index ranges 0..N; index N renders a clone of slide 0 for a seamless loop
   const [index, setIndex] = useState(0);
+  const [instant, setInstant] = useState(false);
+
+  const goTo = (i: number) => {
+    setInstant(false);
+    setIndex(i);
+  };
 
   useEffect(() => {
-    const t = setInterval(
-      () => setIndex((i) => (i + 1) % heroSlides.length),
-      6000
-    );
+    const t = setInterval(() => {
+      setInstant(false);
+      setIndex((i) => (i >= N ? N : i + 1));
+    }, 6000);
     return () => clearInterval(t);
   }, []);
 
-  const trackStyle = {
-    transform: `translateX(-${index * 100}%)`,
-  };
+  // When the clone (index N) finishes sliding in, snap back to 0 instantly
+  useEffect(() => {
+    if (index === N) {
+      const t = setTimeout(() => {
+        setInstant(true);
+        setIndex(0);
+      }, TRACK_MS + 50);
+      return () => clearTimeout(t);
+    }
+  }, [index]);
+
+  // Re-enable animation shortly after the instant snap
+  useEffect(() => {
+    if (instant) {
+      const t = setTimeout(() => setInstant(false), 60);
+      return () => clearTimeout(t);
+    }
+  }, [instant]);
+
+  const activeDot = index % N;
+  const trackClass = `flex ${EASE} ${
+    instant ? "" : "transition-transform duration-[800ms]"
+  }`;
+  const trackStyle = { transform: `translateX(-${index * 100}%)` };
+  // render slides 0..N-1 plus a clone of slide 0 at position N
+  const positions = Array.from({ length: N + 1 }, (_, i) => i);
 
   return (
     <section className="relative overflow-hidden bg-white">
-      {/* Mobile: sliding track of compact side-by-side slides */}
+      {/* Mobile */}
       <div className="md:hidden overflow-hidden">
-        <div
-          className={`flex transition-transform duration-[800ms] ${EASE}`}
-          style={trackStyle}
-        >
-          {heroSlides.map((_, i) => (
-            <MobileSlide key={i} i={i} />
+        <div className={trackClass} style={trackStyle}>
+          {positions.map((i) => (
+            <MobileSlide key={i} i={i} active={index === i} />
           ))}
         </div>
-        <div className="flex gap-1.5 px-5 pb-5 -mt-1 md:hidden">
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              aria-label={`Go to slide ${i + 1}`}
-              onClick={() => setIndex(i)}
-              className={`h-1 rounded-full transition-all duration-500 ${EASE} ${
-                i === index ? "w-6 bg-black" : "w-2 bg-neutral-300"
-              }`}
-            />
-          ))}
-        </div>
+        <DotsRow active={activeDot} goTo={goTo} />
       </div>
 
-      {/* Desktop: sliding track of roomy side-by-side slides */}
+      {/* Desktop */}
       <div className="hidden md:block overflow-hidden">
-        <div
-          className={`flex transition-transform duration-[800ms] ${EASE}`}
-          style={trackStyle}
-        >
-          {heroSlides.map((_, i) => (
-            <DesktopSlide key={i} i={i} />
+        <div className={trackClass} style={trackStyle}>
+          {positions.map((i) => (
+            <DesktopSlide key={i} i={i} active={index === i} />
           ))}
         </div>
-        <div className="hidden md:flex gap-2 px-16 pb-8 -mt-2">
-          {heroSlides.map((_, i) => (
-            <button
-              key={i}
-              aria-label={`Go to slide ${i + 1}`}
-              onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${EASE} ${
-                i === index ? "w-8 bg-black" : "w-3 bg-neutral-300"
-              }`}
-            />
-          ))}
-        </div>
+        <DotsRow active={activeDot} goTo={goTo} desktop />
       </div>
     </section>
   );
