@@ -68,6 +68,7 @@ export default function SiteFooter() {
             <p className="font-bold tracking-wide mb-4">FAQ</p>
             <ul className="space-y-3 text-white/70">
               <li><Link href="/privacy" className="hover:text-white">PRIVACY</Link></li>
+              <li><Link href="/terms" className="hover:text-white">TERMS</Link></li>
               <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
             </ul>
           </div>

@@ -81,8 +81,19 @@ export async function POST(req: NextRequest) {
 
   const resend = new Resend(apiKey);
   try {
-    const result = await resend.emails.send({ from, to, subject, html });
-    return NextResponse.json({ ok: true, id: result.data?.id });
+    // One email per recipient so nobody ever sees the other addresses.
+    const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
+    if (recipients.length === 0) {
+      return NextResponse.json({ error: "No recipients" }, { status: 400 });
+    }
+    const batch = recipients.map((email) => ({
+      from,
+      to: email,
+      subject,
+      html,
+    }));
+    const result = await resend.batch.send(batch);
+    return NextResponse.json({ ok: true, sent: recipients.length });
   } catch (err) {
     return NextResponse.json(
       { error: "Send failed", detail: String(err).slice(0, 200) },

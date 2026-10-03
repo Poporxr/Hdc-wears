@@ -26,10 +26,10 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
-const VARIANT_STYLES: Record<ToastVariant, { bar: string; icon: string }> = {
-  success: { bar: "bg-white", icon: "✓" },
-  error: { bar: "bg-red-500", icon: "!" },
-  info: { bar: "bg-neutral-400", icon: "i" },
+const VARIANT_STYLES: Record<ToastVariant, { dot: string }> = {
+  success: { dot: "bg-white" },
+  error: { dot: "bg-red-500" },
+  info: { dot: "bg-neutral-500" },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -60,40 +60,38 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"
+        className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center w-full sm:w-auto px-4 pointer-events-none"
       >
         {toasts.map((t) => {
           const s = VARIANT_STYLES[t.variant];
           return (
             <div
               key={t.id}
-              className="pointer-events-auto w-full sm:w-96 bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden animate-[toast-in_0.25s_ease-out]"
+              className="pointer-events-auto flex items-center gap-2.5 bg-neutral-950 border border-neutral-800 rounded-full pl-3.5 pr-2 py-2 shadow-xl shadow-black/40 max-w-full animate-[toast-in_0.25s_ease-out]"
             >
-              <div className="flex">
-                <div className={`w-1 shrink-0 ${s.bar}`} />
-                <div className="flex-1 px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-bold text-white">{t.title}</p>
-                    <button
-                      onClick={() => dismiss(t.id)}
-                      className="text-neutral-500 hover:text-white text-lg leading-none shrink-0"
-                      aria-label="Dismiss"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  {t.description && (
-                    <p className="text-xs text-neutral-400 mt-1">
-                      {t.description}
-                    </p>
-                  )}
-                </div>
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                  {t.title}
+                </p>
+                {t.description && (
+                  <p className="text-[11px] text-neutral-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                    {t.description}
+                  </p>
+                )}
               </div>
+              <button
+                onClick={() => dismiss(t.id)}
+                className="text-neutral-500 hover:text-white text-sm leading-none shrink-0 w-6 h-6 flex items-center justify-center"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
             </div>
           );
         })}
       </div>
-      <style>{`@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <style>{`@keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
     </ToastContext.Provider>
   );
 }
