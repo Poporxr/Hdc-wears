@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Inter } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
+import ImagePreloader from "@/components/ImagePreloader";
 import "./globals.css";
 
 const anton = Anton({
@@ -35,6 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <StoreProvider>{children}</StoreProvider>
         </AuthProvider>
+        <ImagePreloader />
       </body>
     </html>
   );

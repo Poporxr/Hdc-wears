@@ -4,13 +4,34 @@ import ProductCard from "@/components/ProductCard";
 import GallerySection from "@/components/GallerySection";
 import SiteFooter from "@/components/SiteFooter";
 import { fetchProducts } from "@/lib/db";
+import { cl } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+
+const HERO_COLORS = ["red", "black", "green", "blue"];
 
 export default async function Home() {
   const products = await fetchProducts().catch(() => []);
   return (
     <div className="min-h-screen bg-white text-neutral-900">
+      {HERO_COLORS.map((c) => (
+        <link
+          key={c}
+          rel="preload"
+          as="image"
+          media="(max-width: 767px)"
+          href={cl(`hero/${c}-mobile`, "f_auto,q_auto,w_600")}
+        />
+      ))}
+      {HERO_COLORS.map((c) => (
+        <link
+          key={c}
+          rel="preload"
+          as="image"
+          media="(min-width: 768px)"
+          href={cl(`hero/${c}-desktop`, "f_auto,q_auto,w_1000")}
+        />
+      ))}
       <Header />
       <main>
         <Hero />
