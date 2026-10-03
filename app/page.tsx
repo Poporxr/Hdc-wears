@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
+import GallerySection from "@/components/GallerySection";
 import SiteFooter from "@/components/SiteFooter";
 import { products } from "@/lib/products";
 
@@ -19,6 +20,7 @@ export default function Home() {
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>
+          <GallerySection />
         </section>
       </main>
       <SiteFooter />
