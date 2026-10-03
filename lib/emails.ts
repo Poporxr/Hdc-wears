@@ -106,3 +106,59 @@ export function welcomeEmail(opts: { name: string }) {
     ),
   };
 }
+
+export function backInStockEmail(opts: {
+  productName: string;
+  imageUrl?: string;
+  productUrl: string;
+}) {
+  return {
+    subject: `${opts.productName} is back in stock`,
+    html: WRAP(
+      "It's back.",
+      (opts.imageUrl
+        ? `<img src="${opts.imageUrl}" alt="" style="width:100%;border-radius:8px;margin:0 0 16px;display:block;">`
+        : "") +
+        P(
+          `<strong>${opts.productName}</strong> just restocked. Last time it didn't last long.`
+        ) +
+        BTN(opts.productUrl, "SHOP NOW")
+    ),
+  };
+}
+
+export function stockAlertEmail(opts: {
+  productName: string;
+  adminName?: string;
+}) {
+  return {
+    subject: `Stock alert: ${opts.productName} is out of stock`,
+    html: WRAP(
+      "Heads up.",
+      P(
+        `<strong>${opts.productName}</strong> was just marked out of stock on HDC Wears.`
+      ) +
+        P("Restock it from the operator dashboard when ready.") +
+        BTN("https://hdc-wears.vercel.app/operator", "OPEN OPERATOR"),
+    ),
+  };
+}
+
+export function orderStatusEmail(opts: {
+  name: string;
+  orderId: string;
+  status: string;
+  statusCopy: string;
+}) {
+  return {
+    subject: `Your order is ${opts.status}`,
+    html: WRAP(
+      `Order ${opts.status}.`,
+      P(`Hi ${opts.name},`) +
+        P(
+          `Your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong> is now <strong>${opts.status}</strong>. ${opts.statusCopy}`
+        ) +
+        BTN("https://hdc-wears.vercel.app/orders", "VIEW ORDER"),
+    ),
+  };
+}

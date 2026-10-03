@@ -77,3 +77,9 @@ export function youMightLikeSync(
 ) {
   return products.filter((p) => p.slug !== excludeSlug).slice(0, count);
 }
+
+/** Bust the products cache (call after admin mutations). */
+export function clearProductsCache() {
+  productsCache = null;
+  galleryCache = null;
+}

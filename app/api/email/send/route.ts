@@ -5,11 +5,15 @@ import {
   newDropEmail,
   abandonedCartEmail,
   welcomeEmail,
+  backInStockEmail,
+  stockAlertEmail,
+  orderStatusEmail,
 } from "@/lib/emails";
 
 /**
  * POST /api/email/send
- * Body: { type: "order_confirmation" | "new_drop" | "abandoned_cart" | "welcome",
+ * Body: { type: "order_confirmation" | "new_drop" | "abandoned_cart" | "welcome"
+ *         | "back_in_stock" | "stock_alert" | "order_status",
  *         to: string | string[], data: {...} }
  *
  * Called from the /operator dashboard (admin-gated) and from Vercel cron
@@ -49,6 +53,24 @@ export async function POST(req: NextRequest) {
     }
     case "welcome": {
       const e = welcomeEmail(data);
+      subject = e.subject;
+      html = e.html;
+      break;
+    }
+    case "back_in_stock": {
+      const e = backInStockEmail(data);
+      subject = e.subject;
+      html = e.html;
+      break;
+    }
+    case "stock_alert": {
+      const e = stockAlertEmail(data);
+      subject = e.subject;
+      html = e.html;
+      break;
+    }
+    case "order_status": {
+      const e = orderStatusEmail(data);
       subject = e.subject;
       html = e.html;
       break;

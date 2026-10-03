@@ -64,3 +64,16 @@ export async function deleteGalleryImage(key: string) {
   if (!db) throw new Error("Firebase not configured");
   await deleteDoc(doc(db, "gallery", key));
 }
+
+/** Admin: delete a product. */
+export async function deleteProduct(slug: string) {
+  if (!db) throw new Error("Firebase not configured");
+  await deleteDoc(doc(db, "products", slug));
+}
+
+/** Admin: update an order's status. */
+export async function updateOrderStatus(orderId: string, status: string) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc } = await import("firebase/firestore");
+  await updateDoc(doc(db, "orders", orderId), { status });
+}
