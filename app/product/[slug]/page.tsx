@@ -1,7 +1,10 @@
 import ProductDetail from "@/components/ProductDetail";
-import { products } from "@/lib/products";
+import { fetchProducts } from "@/lib/db";
 
-export function generateStaticParams() {
+export const dynamic = "force-dynamic";
+
+export async function generateStaticParams() {
+  const products = await fetchProducts().catch(() => []);
   return products.map((p) => ({ slug: p.slug }));
 }
 

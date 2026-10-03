@@ -4,13 +4,15 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
-import { getProduct } from "@/lib/products";
+import { getProductSync } from "@/lib/db";
+import { useProducts } from "@/lib/use-products";
 import { useWishlist } from "@/lib/store";
 
 export default function WishlistPage() {
   const { slugs } = useWishlist();
+  const { products } = useProducts();
   const items = slugs
-    .map((s) => getProduct(s))
+    .map((s) => getProductSync(products, s))
     .filter((p) => p !== undefined);
 
   return (

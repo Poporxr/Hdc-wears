@@ -1,5 +1,6 @@
-// Mock catalog data for the HDC Wears replica.
-// No database yet — everything here is static mock data.
+// HDC Wears catalog types & helpers.
+// Product data now lives in Firestore (lib/db.ts) — this module keeps the
+// shared types, formatting helpers, and static site content.
 
 export type Product = {
   slug: string;
@@ -36,69 +37,6 @@ export function colorHex(color: string): string {
   };
   return map[color] ?? "#111111";
 }
-
-export const products: Product[] = [
-  {
-    slug: "hdc-bandana-tee-green",
-    name: "HDC BANDANA TEE — GREEN",
-    color: "Green",
-    price: 24000.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "Acid-wash oversized tee with the HDC bandana back print and embroidered-style chest logo. High Dream Chasers.",
-    images: [
-      "https://files.catbox.moe/4h11y4.jpg",
-      "https://files.catbox.moe/jmvxwk.jpg",
-    ],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "hdc-bandana-tee-red",
-    name: "HDC BANDANA TEE — RED",
-    color: "Red",
-    price: 24000.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "Acid-wash oversized tee with the HDC bandana back print and embroidered-style chest logo. High Dream Chasers.",
-    images: [
-      "https://files.catbox.moe/q604gb.jpg",
-      "https://files.catbox.moe/vpzcbx.jpg",
-    ],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "hdc-bandana-tee-black",
-    name: "HDC BANDANA TEE — BLACK",
-    color: "Black",
-    price: 24000.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "Acid-wash oversized tee with the HDC bandana back print and embroidered-style chest logo. High Dream Chasers.",
-    images: [
-      "https://files.catbox.moe/hzkzqi.jpg",
-      "https://files.catbox.moe/flva7x.jpg",
-    ],
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    slug: "hdc-bandana-tee-blue",
-    name: "HDC BANDANA TEE — BLUE",
-    color: "Blue",
-    price: 24000.0,
-    category: "clothing",
-    inStock: true,
-    description:
-      "Acid-wash oversized tee with the HDC bandana back print and embroidered-style chest logo. High Dream Chasers.",
-    images: [
-      "https://files.catbox.moe/m4g377.jpg",
-      "https://files.catbox.moe/967wq6.jpg",
-    ],
-    sizes: ["S", "M", "L", "XL"],
-  },
-];
 
 export const heroSlides = [
   {
@@ -164,12 +102,4 @@ export function getCategory(slug: string) {
 export function img(seed: string, w = 600, h = 750) {
   if (seed.startsWith("/") || seed.startsWith("http")) return seed;
   return `https://picsum.photos/seed/${seed}/${w}/${h}`;
-}
-
-export function getProduct(slug: string) {
-  return products.find((p) => p.slug === slug);
-}
-
-export function youMightLike(excludeSlug: string, count = 6) {
-  return products.filter((p) => p.slug !== excludeSlug).slice(0, count);
 }

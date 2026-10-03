@@ -1,7 +1,10 @@
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
-import { categories, getCategory, products } from "@/lib/products";
+import { categories, getCategory } from "@/lib/products";
+import { fetchProducts } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));
@@ -14,6 +17,7 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params;
   const category = getCategory(slug);
+  const products = await fetchProducts().catch(() => []);
   const list =
     slug === "combo"
       ? products.filter((p) => p.category === "clothing").slice(0, 4)

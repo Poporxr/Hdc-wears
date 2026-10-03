@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
-import { formatPrice, getProduct, img } from "@/lib/products";
+import { formatPrice, img } from "@/lib/products";
+import { getProductSync } from "@/lib/db";
+import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 
 const inputCls =
@@ -12,6 +14,7 @@ const inputCls =
 
 export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
+  const { products } = useProducts();
   const [placed, setPlaced] = useState(false);
 
   if (placed) {
@@ -97,7 +100,7 @@ export default function CheckoutPage() {
               <h2 className="font-bold text-lg mb-4">Order summary</h2>
               <ul className="space-y-4">
                 {items.map((item) => {
-                  const p = getProduct(item.slug);
+                  const p = getProductSync(products, item.slug);
                   if (!p) return null;
                   return (
                     <li key={`${item.slug}-${item.size}`} className="flex gap-3 items-center">

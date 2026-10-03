@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getProduct } from "./products";
+import { getProductSync } from "./db";
+import { useProducts } from "./use-products";
 
 // ---------- Cart ----------
 
@@ -54,6 +55,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const { products } = useProducts();
 
   useEffect(() => {
     setItems(readLS("hdc-cart"));
@@ -117,12 +119,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let count = 0;
     let subtotal = 0;
     for (const i of items) {
-      const p = getProduct(i.slug);
+      const p = getProductSync(products, i.slug);
       count += i.qty;
       if (p) subtotal += p.price * i.qty;
     }
     return { count, subtotal };
-  }, [items]);
+  }, [items, products]);
 
   return (
     <CartContext.Provider

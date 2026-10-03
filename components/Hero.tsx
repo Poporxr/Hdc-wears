@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { heroSlides } from "@/lib/products";
+import { cl } from "@/lib/db";
 
 const N = heroSlides.length;
 
@@ -98,25 +99,14 @@ function DesktopSlide({ i, src }: { i: number; src: string | null }) {
 
 export default function Hero() {
   const [index, setIndex] = useState(0);
-  const [images, setImages] = useState<Record<string, string> | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Hero artwork ships as data URIs in per-color JSON files so it deploys with the site
+  // Hero artwork served from Cloudinary, sized per viewport
   useEffect(() => {
-    const kind = window.innerWidth < 768 ? "mobile" : "desktop";
-    const colors = ["red", "black", "green", "blue"];
-    Promise.all(
-      colors.map((c) =>
-        fetch(`/hero-images-${kind}-${c}.json`).then((r) => r.json())
-      )
-    )
-      .then((arr) => {
-        const d: Record<string, string> = {};
-        colors.forEach((c, i) => {
-          d[c] = arr[i].src;
-        });
-        setImages(d);
-      })
-      .catch(() => {});
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => {
@@ -125,7 +115,10 @@ export default function Hero() {
   }, []);
 
   const slide = heroSlides[index % N];
-  const src = images?.[slide.colorKey] ?? null;
+  const src = cl(
+    `hero/${slide.colorKey}-${isMobile ? "mobile" : "desktop"}`,
+    isMobile ? "f_auto,q_auto,w_600" : "f_auto,q_auto,w_1000"
+  );
 
   return (
     <section className="relative overflow-hidden bg-white">

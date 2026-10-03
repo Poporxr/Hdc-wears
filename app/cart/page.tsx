@@ -3,11 +3,14 @@
 import Link from "next/link";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
-import { formatPrice, getProduct, img } from "@/lib/products";
+import { formatPrice, img } from "@/lib/products";
+import { getProductSync } from "@/lib/db";
+import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 
 export default function CartPage() {
   const { items, subtotal, setQty, remove } = useCart();
+  const { products } = useProducts();
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -31,7 +34,7 @@ export default function CartPage() {
           <>
             <ul className="divide-y divide-neutral-200">
               {items.map((item) => {
-                const p = getProduct(item.slug);
+                const p = getProductSync(products, item.slug);
                 if (!p) return null;
                 return (
                   <li key={`${item.slug}-${item.size}`} className="py-4 flex gap-4">

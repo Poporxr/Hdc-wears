@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { drawerLinks, navLinks, products } from "@/lib/products";
+import { drawerLinks, navLinks } from "@/lib/products";
+import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 
 function IconMenu() {
@@ -59,6 +60,7 @@ export default function Header() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { count } = useCart();
+  const { products } = useProducts();
 
   const results =
     query.trim().length > 0

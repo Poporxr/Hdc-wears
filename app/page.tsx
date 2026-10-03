@@ -3,9 +3,12 @@ import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import GallerySection from "@/components/GallerySection";
 import SiteFooter from "@/components/SiteFooter";
-import { products } from "@/lib/products";
+import { fetchProducts } from "@/lib/db";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const products = await fetchProducts().catch(() => []);
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <Header />

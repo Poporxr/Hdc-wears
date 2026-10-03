@@ -8,10 +8,13 @@ import SiteFooter from "@/components/SiteFooter";
 import {
   colorHex,
   formatPrice,
-  getProduct,
   img,
-  youMightLike,
 } from "@/lib/products";
+import {
+  getProductSync,
+  youMightLikeSync,
+} from "@/lib/db";
+import { useProducts } from "@/lib/use-products";
 import { useCart, useWishlist } from "@/lib/store";
 
 function IconHeart({ filled }: { filled: boolean }) {
@@ -58,7 +61,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const [flip, setFlip] = useState<{ from: number; to: number } | null>(null);
   const [spinSrc, setSpinSrc] = useState<number | null>(null);
   const activeView = flip ? flip.to : view;
-  const product = getProduct(slug);
+  const { products, loading } = useProducts();
+  const product = getProductSync(products, slug);
 
   /** Spin the image a full 360, swapping views at the edge-on midpoint. */
   const goTo = (n: number) => {
@@ -85,6 +89,16 @@ export default function ProductDetail({ slug }: { slug: string }) {
     setTimeout(() => setAdded(false), 1800);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <p className="p-8 text-center animate-pulse">Loading...</p>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
@@ -95,7 +109,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
     );
   }
 
-  const related = youMightLike(product.slug);
+  const related = youMightLikeSync(products, product.slug);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
