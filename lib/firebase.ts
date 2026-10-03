@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,13 +13,15 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
+let auth: Auth | null = null;
 
 // Only initialize when configured (env vars present). The site renders
 // empty states until Devan adds the Firebase config in Vercel.
 if (firebaseConfig.apiKey && firebaseConfig.projectId) {
   app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   db = getFirestore(app);
+  auth = getAuth(app);
 }
 
-export { db };
-export const isFirebaseConfigured = db !== null;
+export { db, auth };
+export const isFirebaseConfigured = db !== null && auth !== null;

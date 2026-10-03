@@ -21,6 +21,8 @@ function IconBack() {
   );
 }
 
+import GoogleSignInButton from "@/components/GoogleSignInButton";
+
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
 
@@ -40,6 +42,12 @@ export default function SignupPage() {
             <IconBack />
           </Link>
           <h1 className="text-2xl font-bold">Create Account</h1>
+        </div>
+        <GoogleSignInButton label="SIGN UP WITH GOOGLE" />
+        <div className="flex items-center gap-3 my-5">
+          <span className="flex-1 h-px bg-neutral-200" />
+          <span className="text-xs text-neutral-400 font-semibold">OR</span>
+          <span className="flex-1 h-px bg-neutral-200" />
         </div>
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <input type="text" required placeholder="Name*" className={inputCls} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { drawerLinks, navLinks } from "@/lib/products";
 import { useProducts } from "@/lib/use-products";
+import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/store";
 
 function IconMenu() {
@@ -61,6 +62,7 @@ export default function Header() {
   const [query, setQuery] = useState("");
   const { count } = useCart();
   const { products } = useProducts();
+  const { user, profile, signOut } = useAuth();
 
   const results =
     query.trim().length > 0
@@ -124,21 +126,40 @@ export default function Header() {
                 <IconUser />
               </button>
               {accountOpen && (
-                <div className="absolute right-0 top-11 w-40 bg-white rounded-xl shadow-xl border border-neutral-200 py-2">
-                  <Link
-                    href="/login"
-                    className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
-                    onClick={() => setAccountOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
-                    onClick={() => setAccountOpen(false)}
-                  >
-                    Sign up
-                  </Link>
+                <div className="absolute right-0 top-11 w-44 bg-white rounded-xl shadow-xl border border-neutral-200 py-2">
+                  {user ? (
+                    <>
+                      <p className="px-4 py-2.5 text-sm font-bold truncate border-b border-neutral-100">
+                        {profile?.name || user.email}
+                      </p>
+                      <button
+                        className="block w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-100"
+                        onClick={() => {
+                          signOut();
+                          setAccountOpen(false);
+                        }}
+                      >
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Sign up
+                      </Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>

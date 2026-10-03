@@ -8,6 +8,7 @@ import { formatPrice, img } from "@/lib/products";
 import { getProductSync } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
@@ -15,7 +16,33 @@ const inputCls =
 export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { products } = useProducts();
+  const { user, profile, saveProfile } = useAuth();
   const [placed, setPlaced] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+
+  // Prefill from profile when available
+  const nameValue = formName || profile?.name || "";
+  const phoneValue = formPhone || profile?.phone || "";
+  const emailValue = formEmail || profile?.email || user?.email || "";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // If signed in but profile is missing name/phone, save what they entered
+    if (user && profile) {
+      const updates: { name?: string; phone?: string } = {};
+      if (!profile.name && nameValue.trim()) updates.name = nameValue.trim();
+      if (!profile.phone && phoneValue.trim()) updates.phone = phoneValue.trim();
+      if (Object.keys(updates).length > 0) {
+        try {
+          await saveProfile(updates);
+        } catch {}
+      }
+    }
+    setPlaced(true);
+    clear();
+  };
 
   if (placed) {
     return (
@@ -62,20 +89,34 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-10">
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setPlaced(true);
-                clear();
-              }}
-            >
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <h2 className="font-bold text-lg">Contact</h2>
-              <input required type="email" placeholder="Email*" className={inputCls} />
-              <input required type="tel" placeholder="Phone Number*" className={inputCls} />
+              <input
+                required
+                type="email"
+                placeholder="Email*"
+                className={inputCls}
+                value={emailValue}
+                onChange={(e) => setFormEmail(e.target.value)}
+              />
+              <input
+                required
+                type="tel"
+                placeholder="Phone Number*"
+                className={inputCls}
+                value={phoneValue}
+                onChange={(e) => setFormPhone(e.target.value)}
+              />
 
               <h2 className="font-bold text-lg pt-4">Delivery</h2>
-              <input required type="text" placeholder="Full Name*" className={inputCls} />
+              <input
+                required
+                type="text"
+                placeholder="Full Name*"
+                className={inputCls}
+                value={nameValue}
+                onChange={(e) => setFormName(e.target.value)}
+              />
               <input required type="text" placeholder="Address*" className={inputCls} />
               <div className="grid grid-cols-2 gap-4">
                 <input required type="text" placeholder="City*" className={inputCls} />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Inter } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 const anton = Anton({
@@ -31,7 +32,9 @@ export default function RootLayout({
       className={`${anton.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <StoreProvider>{children}</StoreProvider>
+        <AuthProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );
