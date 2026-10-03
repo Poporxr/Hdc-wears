@@ -9,10 +9,6 @@ export const ALL_KEYS = [
   "black-studio",
   "green-studio",
   "blue-studio",
-  "red-wide",
-  "black-wide",
-  "green-wide",
-  "blue-wide",
 ];
 
 export function useGalleryImages(keys: string[]) {
