@@ -30,11 +30,7 @@ export default function EmailsTab() {
       }
       const res = await fetch("/api/email/send", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-operator-secret":
-            process.env.NEXT_PUBLIC_OPERATOR_EMAIL_SECRET || "",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "new_drop",
           to: emails,

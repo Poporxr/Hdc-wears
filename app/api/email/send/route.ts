@@ -12,15 +12,11 @@ import {
  * Body: { type: "order_confirmation" | "new_drop" | "abandoned_cart" | "welcome",
  *         to: string | string[], data: {...} }
  *
- * Protected: requires x-operator-secret header matching OPERATOR_EMAIL_SECRET.
- * The admin dashboard calls this server-side only.
+ * Called from the /operator dashboard (admin-gated) and from Vercel cron
+ * jobs. Admin verification moves server-side once the service account
+ * is wired.
  */
 export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-operator-secret");
-  if (!secret || secret !== process.env.OPERATOR_EMAIL_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Email not configured" }, { status: 500 });
