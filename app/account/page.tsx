@@ -6,12 +6,14 @@ import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import AuthGuard from "@/components/AuthGuard";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/toast";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
 
 function AccountInner() {
   const { user, profile, saveProfile, signOut } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(profile?.name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [saved, setSaved] = useState(false);
@@ -27,7 +29,9 @@ function AccountInner() {
       } as { name: string | null; phone: string | null });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      toast({ title: "Profile updated", variant: "success" });
     } catch {
+      toast({ title: "Save failed", variant: "error" });
     } finally {
       setSaving(false);
     }

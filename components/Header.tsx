@@ -6,6 +6,7 @@ import { drawerLinks, navLinks } from "@/lib/products";
 import { useProducts } from "@/lib/use-products";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/store";
+import { useToast } from "@/components/toast";
 
 function IconMenu() {
   return (
@@ -63,6 +64,7 @@ export default function Header() {
   const { count } = useCart();
   const { products } = useProducts();
   const { user, profile, signOut } = useAuth();
+  const toast = useToast();
 
   const results =
     query.trim().length > 0
@@ -151,6 +153,7 @@ export default function Header() {
                         onClick={() => {
                           signOut();
                           setAccountOpen(false);
+                          toast({ title: "Signed out", variant: "info" });
                         }}
                       >
                         Sign out

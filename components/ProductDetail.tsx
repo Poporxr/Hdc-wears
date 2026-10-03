@@ -16,6 +16,7 @@ import {
 } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart, useWishlist } from "@/lib/store";
+import { useToast } from "@/components/toast";
 
 function IconHeart({ filled }: { filled: boolean }) {
   return (
@@ -81,12 +82,26 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const [added, setAdded] = useState(false);
   const { add } = useCart();
   const { toggle, has } = useWishlist();
+  const toast = useToast();
   const wishlisted = has(slug);
 
   const handleAdd = () => {
     add(slug, size, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
+    toast({
+      title: "Added to cart",
+      description: `${qty} × ${product?.name || slug} (${size})`,
+      variant: "success",
+    });
+  };
+
+  const handleWishlist = () => {
+    toggle(slug);
+    toast({
+      title: wishlisted ? "Removed from wishlist" : "Saved to wishlist",
+      variant: wishlisted ? "info" : "success",
+    });
   };
 
   if (loading) {
@@ -267,7 +282,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
               </button>
               <button
                 aria-label="Add to wishlist"
-                onClick={() => toggle(slug)}
+                onClick={handleWishlist}
                 className="w-[52px] rounded-lg border-2 border-detta-navy text-detta-navy flex items-center justify-center"
               >
                 <IconHeart filled={wishlisted} />

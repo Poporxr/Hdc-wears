@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/toast";
 
 function IconGoogle() {
   return (
@@ -29,6 +30,7 @@ function IconGoogle() {
 
 export default function GoogleSignInButton({ label }: { label: string }) {
   const { signInWithGoogle } = useAuth();
+  const toast = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -38,9 +40,15 @@ export default function GoogleSignInButton({ label }: { label: string }) {
     setError("");
     try {
       await signInWithGoogle();
+      toast({ title: "Welcome to HDC Wears", variant: "success" });
       router.push("/");
     } catch (e) {
       setError("Google sign-in failed. Try again.");
+      toast({
+        title: "Google sign-in failed",
+        description: "Try again.",
+        variant: "error",
+      });
       setBusy(false);
     }
   };

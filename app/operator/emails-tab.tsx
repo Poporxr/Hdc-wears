@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { listCustomers } from "@/lib/admin";
 import { cl } from "@/lib/db";
+import { useToast } from "@/components/toast";
 
 const inputCls =
   "w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white placeholder:text-neutral-500";
@@ -10,6 +11,7 @@ const labelCls =
   "block text-[11px] font-bold tracking-[0.2em] text-neutral-500 mb-1.5";
 
 export default function EmailsTab() {
+  const toast = useToast();
   const [title, setTitle] = useState("");
   const [copy, setCopy] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -24,7 +26,9 @@ export default function EmailsTab() {
       const customers = (await listCustomers()) as { email?: string }[];
       const emails = customers.map((c) => c.email).filter(Boolean) as string[];
       if (emails.length === 0) {
-        setResult("No customer emails to send to yet.");
+        const msg = "No customer emails to send to yet.";
+        setResult(msg);
+        toast({ title: msg, variant: "info" });
         setSending(false);
         return;
       }
@@ -44,15 +48,21 @@ export default function EmailsTab() {
       });
       const j = await res.json();
       if (j.ok) {
-        setResult(`Sent to ${emails.length} customers.`);
+        const msg = `Sent to ${emails.length} customers.`;
+        setResult(msg);
+        toast({ title: "Drop email sent", description: msg, variant: "success" });
         setTitle("");
         setCopy("");
         setImageUrl("");
       } else {
-        setResult(`Failed: ${j.error || "unknown error"}`);
+        const msg = `Failed: ${j.error || "unknown error"}`;
+        setResult(msg);
+        toast({ title: "Send failed", description: msg, variant: "error" });
       }
     } catch {
-      setResult("Failed to send.");
+      const msg = "Failed to send.";
+      setResult(msg);
+      toast({ title: msg, variant: "error" });
     } finally {
       setSending(false);
     }

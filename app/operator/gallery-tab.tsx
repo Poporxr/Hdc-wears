@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { fetchGallery, cl, type GalleryImage } from "@/lib/db";
 import { deleteGalleryImage } from "@/lib/admin";
+import { useToast } from "@/components/toast";
 
 export default function GalleryTab() {
+  const toast = useToast();
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,10 @@ export default function GalleryTab() {
     try {
       await deleteGalleryImage(key);
       setImages((prev) => prev.filter((g) => g.key !== key));
-    } catch {}
+      toast({ title: "Removed from gallery", description: key, variant: "info" });
+    } catch {
+      toast({ title: "Remove failed", variant: "error" });
+    }
   };
 
   if (loading) {

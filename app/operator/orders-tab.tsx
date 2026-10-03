@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { listOrders, updateOrderStatus } from "@/lib/admin";
 import { onOrderStatusChange } from "@/lib/email-triggers";
 import { formatPrice } from "@/lib/products";
+import { useToast } from "@/components/toast";
 
 type Order = {
   id: string;
@@ -27,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function OrdersTab() {
+  const toast = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -54,8 +56,13 @@ export default function OrdersTab() {
           status,
         });
       }
+      toast({
+        title: `Order ${status}`,
+        description: `#${o.id.slice(0, 8).toUpperCase()}${o.email ? " — customer emailed" : ""}`,
+        variant: "success",
+      });
     } catch {
-      alert("Status update failed.");
+      toast({ title: "Status update failed", variant: "error" });
     } finally {
       setBusy(null);
     }

@@ -7,10 +7,17 @@ import { formatPrice, img } from "@/lib/products";
 import { getProductSync } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
+import { useToast } from "@/components/toast";
 
 export default function CartPage() {
   const { items, subtotal, setQty, remove } = useCart();
   const { products } = useProducts();
+  const toast = useToast();
+
+  const handleRemove = (slug: string, size: string) => {
+    remove(slug, size);
+    toast({ title: "Removed from cart", variant: "info" });
+  };
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -53,7 +60,7 @@ export default function CartPage() {
                       <div className="flex justify-between gap-2">
                         <h3 className="font-bold text-sm">{p.name}</h3>
                         <button
-                          onClick={() => remove(item.slug, item.size)}
+                          onClick={() => handleRemove(item.slug, item.size)}
                           className="text-neutral-400 text-xs underline shrink-0"
                         >
                           Remove

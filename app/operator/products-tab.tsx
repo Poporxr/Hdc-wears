@@ -10,6 +10,7 @@ import {
   onProductBackInStock,
 } from "@/lib/email-triggers";
 import { formatPrice, type Product } from "@/lib/products";
+import { useToast } from "@/components/toast";
 
 const inputCls =
   "w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white placeholder:text-neutral-500";
@@ -35,6 +36,7 @@ function ProductForm({
   initial: Product;
   onDone: () => void;
 }) {
+  const toast = useToast();
   const isNew = !initial.slug;
   const [form, setForm] = useState<Product>({ ...initial });
   const [uploading, setUploading] = useState(false);
@@ -55,7 +57,7 @@ function ProductForm({
       }
       setForm((f) => ({ ...f, images: [...f.images, ...paths] }));
     } catch {
-      alert("Image upload failed. Try again.");
+      toast({ title: "Image upload failed", variant: "error" });
     } finally {
       setUploading(false);
     }
@@ -83,8 +85,17 @@ function ProductForm({
         await onProductBackInStock(product);
       }
       onDone();
+      toast({
+        title: isNew ? "Product created" : "Product saved",
+        description: product.name,
+        variant: "success",
+      });
     } catch {
-      alert("Save failed. Check your connection.");
+      toast({
+        title: "Save failed",
+        description: "Check your connection and try again.",
+        variant: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -244,6 +255,7 @@ function ProductForm({
 }
 
 export default function ProductsTab() {
+  const toast = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -271,7 +283,13 @@ export default function ProductsTab() {
       );
       if (p.inStock && !updated.inStock) await onProductOutOfStock(updated);
       if (!p.inStock && updated.inStock) await onProductBackInStock(updated);
+      toast({
+        title: updated.inStock ? "Back in stock" : "Marked out of stock",
+        description: p.name,
+        variant: "info",
+      });
     } catch {
+      toast({ title: "Stock update failed", variant: "error" });
     } finally {
       setBusy(false);
     }
@@ -283,8 +301,9 @@ export default function ProductsTab() {
     try {
       await deleteProduct(p.slug);
       setProducts((prev) => prev.filter((x) => x.slug !== p.slug));
+      toast({ title: "Product deleted", description: p.name, variant: "info" });
     } catch {
-      alert("Delete failed.");
+      toast({ title: "Delete failed", variant: "error" });
     } finally {
       setBusy(false);
     }
