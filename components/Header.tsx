@@ -132,6 +132,20 @@ export default function Header() {
                       <p className="px-4 py-2.5 text-sm font-bold truncate border-b border-neutral-100">
                         {profile?.name || user.email}
                       </p>
+                      <Link
+                        href="/account"
+                        className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        My Account
+                      </Link>
+                      <Link
+                        href="/orders"
+                        className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        My Orders
+                      </Link>
                       <button
                         className="block w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-100"
                         onClick={() => {
