@@ -1,5 +1,10 @@
-rules_version = '2';
+// HDC Wears — Firestore security rules (production mode).
+// Catalog + gallery are public; everything else is scoped to the owner or an admin.
+// Admins are managed via the `admins` collection (doc id = uid); the first admin
+// doc must be created manually in the Firebase console, after which that admin
+// can grant others.
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -7,48 +12,65 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Admin = Firebase Auth user with the custom claim {admin: true},
-    // set via the Admin SDK when an admin account is created.
     function isAdmin() {
-      return isSignedIn() && request.auth.token.admin == true;
+      return isSignedIn() &&
+        (request.auth.token.email == "poporxr@gmail.com" ||
+         request.auth.token.email == "isaacfewz@gmail.com" ||
+         exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // --- Storefront catalog: public read, admins manage ---
-    match /products/{productId} {
+    // Storefront catalog — public read, admins only write.
+    match /products/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    match /categories/{categoryId} {
+    // HDC WORLD photoshoot strip + /gallery page — public read, admins only write.
+    match /gallery/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // --- Marketing / site content (homepage, gallery, FAQs) ---
-    match /site/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Customer profiles — the owner, or admins for the /admin dashboard.
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isAdmin();
     }
 
-    // --- Orders: guests can place orders at checkout; only admins see/manage them ---
+    // Per-user cart — synced server-side once login is real.
+    match /carts/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Per-user wishlist.
+    match /wishlists/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Orders — users create and read their own; admins manage all.
     match /orders/{orderId} {
-      allow create: if request.resource.data.keys().hasAll(['items', 'total'])
-                    && request.resource.data.total is number
-                    && request.resource.data.items.size() > 0;
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Custom design requests — signed-in users can file; admins triage.
+    match /design_requests/{id} {
+      allow create: if isSignedIn();
       allow read, update, delete: if isAdmin();
     }
 
-    // --- Customer accounts: owners and admins only ---
-    match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+    // Admin roster — only existing admins can change it.
+    // Seed the FIRST admin doc by hand in the Firebase console.
+    match /admins/{uid} {
+      allow read, write: if isAdmin();
+    }
 
-      match /wishlist/{itemId} {
-        allow read, write: if isOwner(userId) || isAdmin();
-      }
+    // Default deny everything else.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

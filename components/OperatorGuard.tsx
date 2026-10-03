@@ -21,7 +21,7 @@ export default function OperatorGuard({
       router.replace("/login");
       return;
     }
-    isAdmin(user.uid).then((ok) => {
+    isAdmin(user.uid, user.email).then((ok) => {
       if (!ok) router.replace("/");
       else setAllowed(true);
     });
