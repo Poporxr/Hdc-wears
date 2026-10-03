@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin = Firebase Auth user with the custom claim {admin: true},
+    // set via the Admin SDK when an admin account is created.
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Storefront catalog: public read, admins manage ---
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Marketing / site content (homepage, gallery, FAQs) ---
+    match /site/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Orders: guests can place orders at checkout; only admins see/manage them ---
+    match /orders/{orderId} {
+      allow create: if request.resource.data.keys().hasAll(['items', 'total'])
+                    && request.resource.data.total is number
+                    && request.resource.data.items.size() > 0;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // --- Customer accounts: owners and admins only ---
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+
+      match /wishlist/{itemId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+  }
+}
