@@ -97,6 +97,14 @@ export default function OrdersTab() {
       setOrders((prev) =>
         prev.map((x) => (x.id === o.id ? { ...x, status } : x))
       );
+      if (o.email) {
+        await onOrderStatusChange({
+          email: o.email,
+          name: o.name || "there",
+          orderId: o.id,
+          status,
+        });
+      }
       toast({
         title: j.success ? "Payment confirmed" : "Payment failed",
         description: `#${o.id.slice(0, 8).toUpperCase()}`,

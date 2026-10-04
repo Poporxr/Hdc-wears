@@ -4,6 +4,7 @@ import {
   initializeTransaction,
   type CartItemInput,
 } from "@/lib/paystack";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 /**
  * POST /api/paystack/initialize
@@ -15,6 +16,10 @@ import {
  * transaction and return the authorization URL.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`paystack-init:${clientIp(req)}`, 10, 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const { orderId, email, items } = (await req.json()) as {
       orderId?: string;

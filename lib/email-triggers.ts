@@ -86,3 +86,26 @@ export async function onOrderStatusChange(opts: {
     });
   } catch {}
 }
+
+/** Fire right after an order is created (before Paystack redirect). */
+export async function onOrderCreated(opts: {
+  email: string;
+  name: string;
+  orderId: string;
+  items: { name: string; qty: number; price: number }[];
+  total: number;
+}) {
+  const { formatPrice } = await import("./products");
+  try {
+    await sendEmail("order_created", opts.email, {
+      name: opts.name,
+      orderId: opts.orderId,
+      items: opts.items.map((i) => ({
+        name: i.name,
+        qty: i.qty,
+        price: formatPrice(i.price * i.qty),
+      })),
+      total: formatPrice(opts.total),
+    });
+  } catch {}
+}

@@ -13,6 +13,7 @@ import { useCart } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { createOrder, setOrderPaystackRef } from "@/lib/admin";
 import { DELIVERY_FEE_NGN } from "@/lib/products";
+import { onOrderCreated } from "@/lib/email-triggers";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
@@ -80,7 +81,16 @@ export default function CheckoutPage() {
         total,
       });
 
-      // 2. Initialize Paystack (server recomputes the total from live prices)
+      // 2. Email: order received (payment still to come)
+      onOrderCreated({
+        email: emailValue,
+        name: nameValue.trim() || "there",
+        orderId,
+        items: orderItems,
+        total,
+      });
+
+      // 3. Initialize Paystack (server recomputes the total from live prices)
       const res = await fetch("/api/paystack/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,7 +103,7 @@ export default function CheckoutPage() {
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || "Could not start payment");
 
-      // 3. Attach the reference, then hand off to Paystack
+      // 4. Attach the reference, then hand off to Paystack
       await setOrderPaystackRef(orderId, j.reference);
       sessionStorage.setItem("hdc_last_order", orderId);
       clear();

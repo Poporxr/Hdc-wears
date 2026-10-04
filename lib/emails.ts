@@ -162,3 +162,53 @@ export function orderStatusEmail(opts: {
     ),
   };
 }
+
+export function orderCreatedEmail(opts: {
+  name: string;
+  orderId: string;
+  items: { name: string; qty: number; price: string }[];
+  total: string;
+}) {
+  const rows = opts.items
+    .map(
+      (i) =>
+        `<tr><td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;color:#000;">${i.name} <span style="color:#888;">× ${i.qty}</span></td><td align="right" style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;font-weight:700;color:#000;">${i.price}</td></tr>`
+    )
+    .join("");
+  return {
+    subject: `Order received — complete your payment`,
+    html: WRAP(
+      `Order received.`,
+      P(`Hi ${opts.name},`) +
+        P(
+          `We've reserved your items for <strong>30 minutes</strong>. Complete your payment to lock in your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong>.`
+        ) +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0;">${rows}</table>` +
+        `<p style="font-size:16px;font-weight:800;color:#000;margin:12px 0;">Total: ${opts.total}</p>` +
+        P(
+          `If you've already paid, ignore this — your confirmation email is on its way.`
+        )
+    ),
+  };
+}
+
+export function paymentReminderEmail(opts: {
+  name: string;
+  orderId: string;
+  total: string;
+}) {
+  return {
+    subject: `Your HDC order is still waiting`,
+    html: WRAP(
+      "Still yours — for now.",
+      P(`Hi ${opts.name},`) +
+        P(
+          `We haven't confirmed payment for your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong> (${opts.total}) yet. Your items are reserved, but not for long.`
+        ) +
+        BTN("https://hdc-wears.vercel.app/checkout", "COMPLETE PAYMENT") +
+        P(
+          `If you already paid, give it a minute — your confirmation email is on its way.`
+        )
+    ),
+  };
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyTransaction } from "@/lib/paystack";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 /**
  * POST /api/paystack/verify
@@ -10,6 +11,10 @@ import { verifyTransaction } from "@/lib/paystack";
  * and fires the confirmation email.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`paystack-verify:${clientIp(req)}`, 30, 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const { reference } = (await req.json()) as { reference?: string };
     if (!reference) {

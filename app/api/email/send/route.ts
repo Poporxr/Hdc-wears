@@ -8,12 +8,16 @@ import {
   backInStockEmail,
   stockAlertEmail,
   orderStatusEmail,
+  orderCreatedEmail,
+  paymentReminderEmail,
 } from "@/lib/emails";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 /**
  * POST /api/email/send
  * Body: { type: "order_confirmation" | "new_drop" | "abandoned_cart" | "welcome"
- *         | "back_in_stock" | "stock_alert" | "order_status",
+ *         | "back_in_stock" | "stock_alert" | "order_status"
+ *         | "order_created" | "payment_reminder",
  *         to: string | string[], data: {...} }
  *
  * Called from the /operator dashboard (admin-gated) and from Vercel cron
@@ -21,6 +25,11 @@ import {
  * is wired.
  */
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`email:${clientIp(req)}`, 20, 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Email not configured" }, { status: 500 });
@@ -71,6 +80,18 @@ export async function POST(req: NextRequest) {
     }
     case "order_status": {
       const e = orderStatusEmail(data);
+      subject = e.subject;
+      html = e.html;
+      break;
+    }
+    case "order_created": {
+      const e = orderCreatedEmail(data);
+      subject = e.subject;
+      html = e.html;
+      break;
+    }
+    case "payment_reminder": {
+      const e = paymentReminderEmail(data);
       subject = e.subject;
       html = e.html;
       break;
