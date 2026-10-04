@@ -118,7 +118,17 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
 
 /**
  * Idempotent server-side order confirmation. Shared by /api/paystack/verify
- * and /api/paystack/webhook. Only pending orders are ever touched.
+ * and /api/paystack/webhook. Called only after Paystack reports success.
+ *
+ * Handles every state the order might be in:
+ * - pending + unpaid → confirmed + paid (normal path)
+ * - already paid → no-op success (webhook + callback both firing)
+ * - fulfillment already moved on (confirmed/shipped/delivered) but payment
+ *   not yet recorded → records the payment, keeps the fulfillment status,
+ *   still sends the confirmation email. The money moved; we don't lie
+ *   about it.
+ * - cancelled → records the payment but leaves it cancelled for the admin
+ *   to resolve (refund or fulfill manually).
  * Requires FIREBASE_SERVICE_ACCOUNT (throws otherwise — no silent fallback).
  */
 export async function confirmPaidOrder(
@@ -129,58 +139,63 @@ export async function confirmPaidOrder(
   const { sendServerEmail } = await import("./server-email");
   const { orderConfirmationEmail } = await import("./emails");
   const { formatPrice } = await import("./products");
-  const { Resend } = await import("resend");
 
   const doc = await fsGet("orders", orderId);
   if (!doc) return { confirmed: false, reason: "Order not found" };
   const o = doc.data as {
     status?: string;
+    paymentStatus?: string;
     email?: string;
     name?: string;
     items?: { name: string; qty: number; price: number }[];
     total?: number;
     expiresAt?: number;
-    reminderEmailId?: string;
   };
 
-  if (o.status === "confirmed") return { confirmed: true, already: true };
-  if (o.status !== "pending")
-    return { confirmed: false, reason: `Order is ${o.status}` };
+  // Payment already recorded — idempotent no-op (webhook + callback both fire).
+  if (o.paymentStatus === "paid") {
+    return { confirmed: true, already: true };
+  }
 
-  if (o.expiresAt && Date.now() > o.expiresAt) {
+  const status = o.status || "pending";
+
+  // Pending orders get the full checks: expiry + amount match.
+  if (status === "pending") {
+    if (o.expiresAt && Date.now() > o.expiresAt) {
+      await fsUpdate("orders", orderId, {
+        status: "cancelled",
+        paymentStatus: "failed",
+      });
+      return { confirmed: false, reason: "Order expired before payment" };
+    }
+
+    if (
+      o.total !== undefined &&
+      Math.round(opts.amountNgn) !== Math.round(o.total)
+    ) {
+      await fsUpdate("orders", orderId, {
+        status: "cancelled",
+        paymentStatus: "failed",
+      });
+      return { confirmed: false, reason: "Paid amount did not match order total" };
+    }
+
     await fsUpdate("orders", orderId, {
-      status: "cancelled",
-      paymentStatus: "failed",
+      status: "confirmed",
+      paymentStatus: "paid",
+      paidAt: opts.paidAt || new Date().toISOString(),
     });
-    return { confirmed: false, reason: "Order expired before payment" };
-  }
-
-  if (
-    o.total !== undefined &&
-    Math.round(opts.amountNgn) !== Math.round(o.total)
-  ) {
+  } else {
+    // Order already moved past pending (e.g. admin acted first) but Paystack
+    // reports success: record the payment, keep the fulfillment status as-is.
+    // The money moved — the customer gets their confirmation either way.
     await fsUpdate("orders", orderId, {
-      status: "cancelled",
-      paymentStatus: "failed",
+      paymentStatus: "paid",
+      paidAt: opts.paidAt || new Date().toISOString(),
     });
-    return { confirmed: false, reason: "Paid amount did not match order total" };
   }
 
-  await fsUpdate("orders", orderId, {
-    status: "confirmed",
-    paymentStatus: "paid",
-    paidAt: opts.paidAt || new Date().toISOString(),
-  });
-
-  // Cancel the scheduled 5-min reminder — they paid.
-  if (o.reminderEmailId && process.env.RESEND_API_KEY) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.cancel(o.reminderEmailId);
-    } catch {}
-  }
-
-  // Confirmation email.
+  // Confirmation email — the customer paid, they hear about it.
   if (o.email) {
     try {
       const e = orderConfirmationEmail({

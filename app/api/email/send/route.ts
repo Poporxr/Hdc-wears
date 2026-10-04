@@ -9,7 +9,6 @@ import {
   stockAlertEmail,
   orderStatusEmail,
   orderCreatedEmail,
-  paymentReminderEmail,
 } from "@/lib/emails";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -17,7 +16,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
  * POST /api/email/send
  * Body: { type: "order_confirmation" | "new_drop" | "abandoned_cart" | "welcome"
  *         | "back_in_stock" | "stock_alert" | "order_status"
- *         | "order_created" | "payment_reminder",
+ *         | "order_created",
  *         to: string | string[], data: {...} }
  *
  * Called from the /operator dashboard (admin-gated) and from Vercel cron
@@ -86,12 +85,6 @@ export async function POST(req: NextRequest) {
     }
     case "order_created": {
       const e = orderCreatedEmail(data);
-      subject = e.subject;
-      html = e.html;
-      break;
-    }
-    case "payment_reminder": {
-      const e = paymentReminderEmail(data);
       subject = e.subject;
       html = e.html;
       break;

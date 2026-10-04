@@ -44,13 +44,19 @@ export function orderConfirmationEmail(opts: {
     )
     .join("");
   return {
-    subject: `Order confirmed — ${opts.orderId.slice(0, 8).toUpperCase()}`,
+    subject: `LOCKED IN — your HDC order is confirmed`,
     html: WRAP(
-      `Thanks, ${opts.name}.`,
-      `${P("Your order is confirmed and being prepared.")}` +
+      `${opts.name}, it's official.`,
+      P(
+        `Payment confirmed. Your pieces are pulled from the rack and being prepped as we speak — no cap, this is the good stuff.`
+      ) +
         `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0;">${rows}</table>` +
-        `<p style="font-size:16px;font-weight:800;color:#000;margin:12px 0;">Total: ${opts.total}</p>` +
-        BTN("https://hdc-wears.vercel.app/orders", "TRACK ORDER")
+        `<p style="font-size:16px;font-weight:800;color:#000;margin:12px 0;">Total paid: ${opts.total}</p>` +
+        P(
+          `Order <strong>#${opts.orderId.slice(0, 8).toUpperCase()}</strong> — keep this email, it's your receipt. We'll hit you again the second it ships.`
+        ) +
+        BTN("https://hdc-wears.vercel.app/orders", "TRACK YOUR ORDER") +
+        `<p style="font-size:12px;color:#999;margin:16px 0 0;">P.S. When it lands, tag <strong style="color:#000;">@hdcwears</strong> — best fits get featured. 👑</p>`
     ),
   };
 }
@@ -176,39 +182,18 @@ export function orderCreatedEmail(opts: {
     )
     .join("");
   return {
-    subject: `Order received — complete your payment`,
+    subject: `Your HDC pieces are reserved — complete payment`,
     html: WRAP(
-      `Order received.`,
-      P(`Hi ${opts.name},`) +
-        P(
-          `We've reserved your items for <strong>30 minutes</strong>. Complete your payment to lock in your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong>.`
-        ) +
+      `${opts.name}, good taste.`,
+      P(
+        `We've set your items aside for <strong>30 minutes</strong> — order <strong>#${opts.orderId.slice(0, 8).toUpperCase()}</strong>. Finish payment now and they're yours for good.`
+      ) +
         `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0;">${rows}</table>` +
         `<p style="font-size:16px;font-weight:800;color:#000;margin:12px 0;">Total: ${opts.total}</p>` +
         P(
-          `If you've already paid, ignore this — your confirmation email is on its way.`
+          `Already paid? Ignore this — your confirmation email is on its way.`
         )
     ),
   };
 }
 
-export function paymentReminderEmail(opts: {
-  name: string;
-  orderId: string;
-  total: string;
-}) {
-  return {
-    subject: `Your HDC order is still waiting`,
-    html: WRAP(
-      "Still yours — for now.",
-      P(`Hi ${opts.name},`) +
-        P(
-          `We haven't confirmed payment for your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong> (${opts.total}) yet. Your items are reserved, but not for long.`
-        ) +
-        BTN("https://hdc-wears.vercel.app/checkout", "COMPLETE PAYMENT") +
-        P(
-          `If you already paid, give it a minute — your confirmation email is on its way.`
-        )
-    ),
-  };
-}

@@ -7,9 +7,8 @@ import {
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
 import { sendServerEmail } from "@/lib/server-email";
-import { orderCreatedEmail, paymentReminderEmail } from "@/lib/emails";
+import { orderCreatedEmail } from "@/lib/emails";
 import { formatPrice } from "@/lib/products";
-import { Resend } from "resend";
 
 /**
  * POST /api/paystack/initialize
@@ -21,7 +20,6 @@ import { Resend } from "resend";
  *  2. Initialize the Paystack transaction (unique ref per order+attempt).
  *  3. Store the Paystack ref on the order (server-side, via service account).
  *  4. Send the "order received" email immediately.
- *  5. Schedule the 5-min "payment not confirmed" reminder (cancellable).
  *
  * Requires PAYSTACK_SECRET_KEY + FIREBASE_SERVICE_ACCOUNT. Fails closed
  * when either is missing — no insecure fallback.
@@ -105,9 +103,6 @@ export async function POST(req: NextRequest) {
       }
     } catch {}
 
-    const from =
-      process.env.RESEND_FROM_EMAIL || "HDC Wears <onboarding@resend.dev>";
-
     // Order-received email (immediate), with real order details.
     let customerName = "there";
     let orderItems: { name: string; qty: number; price: number }[] = [];
@@ -130,28 +125,6 @@ export async function POST(req: NextRequest) {
         total: formatPrice(total),
       });
       await sendServerEmail({ to: email, subject: e.subject, html: e.html });
-    } catch {}
-
-    // 5-min reminder (scheduled, cancellable on payment).
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY!);
-      const reminder = paymentReminderEmail({
-        name: customerName,
-        orderId,
-        total: formatPrice(total),
-      });
-      const scheduled = await resend.emails.send({
-        from,
-        to: email,
-        subject: reminder.subject,
-        html: reminder.html,
-        scheduledAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      });
-      if (scheduled.data?.id) {
-        await fsUpdate("orders", orderId, {
-          reminderEmailId: scheduled.data.id,
-        });
-      }
     } catch {}
 
     return NextResponse.json({

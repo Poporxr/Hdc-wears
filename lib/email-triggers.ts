@@ -86,3 +86,21 @@ export async function onOrderStatusChange(opts: {
     });
   } catch {}
 }
+
+/** Fire when an admin manually marks an order as paid: send the confirmation. */
+export async function onOrderPaidManually(opts: {
+  email: string;
+  name: string;
+  orderId: string;
+  items: { name: string; qty: number; price: string }[];
+  total: string;
+}) {
+  try {
+    await sendEmail("order_confirmation", opts.email, {
+      name: opts.name,
+      orderId: opts.orderId,
+      items: opts.items,
+      total: opts.total,
+    });
+  } catch {}
+}

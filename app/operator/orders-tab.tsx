@@ -7,7 +7,7 @@ import {
   markOrderPaid,
   allowedOrderStatuses,
 } from "@/lib/admin";
-import { onOrderStatusChange } from "@/lib/email-triggers";
+import { onOrderStatusChange, onOrderPaidManually } from "@/lib/email-triggers";
 import { formatPrice } from "@/lib/products";
 import { useToast } from "@/components/toast";
 import {
@@ -162,7 +162,20 @@ function OrderModal({
     try {
       await markOrderPaid(o.id);
       patch({ paymentStatus: "paid", status: "confirmed" });
-      toast({ title: "Marked as paid", variant: "success" });
+      if (o.email) {
+        await onOrderPaidManually({
+          email: o.email,
+          name: o.name || "there",
+          orderId: o.id,
+          items: (o.items || []).map((i) => ({
+            name: i.name || i.slug,
+            qty: i.qty,
+            price: i.price ? formatPrice(i.price * i.qty) : "",
+          })),
+          total: formatPrice(o.total || 0),
+        });
+      }
+      toast({ title: "Marked as paid — confirmation email sent", variant: "success" });
     } catch {
       toast({ title: "Update failed", variant: "error" });
     } finally {
