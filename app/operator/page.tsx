@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { fetchProducts, fetchGallery } from "@/lib/db";
 import { listOrders, listCustomers } from "@/lib/admin";
 import { formatPrice } from "@/lib/products";
+import { StatCard } from "./ui";
 import ProductsTab from "./products-tab";
 import OrdersTab from "./orders-tab";
 import DeliveriesTab from "./deliveries-tab";
@@ -28,52 +29,38 @@ type Stats = {
   outOfStock: number;
   orders: number;
   revenue: number;
+  unpaid: number;
+  paidOrders: number;
   customers: number;
-  gallery: number;
 };
-
-function StatCard({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
-      <p className="text-[11px] font-bold tracking-[0.2em] text-neutral-500">
-        {label}
-      </p>
-      <p className="text-3xl font-black tracking-tight mt-2">{value}</p>
-      {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-    </div>
-  );
-}
 
 function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [recent, setRecent] = useState<{ id: string; name?: string; total?: number; paymentStatus?: string }[]>([]);
 
   useEffect(() => {
     Promise.all([
       fetchProducts().catch(() => []),
       listOrders().catch(() => []),
       listCustomers().catch(() => []),
-      fetchGallery().catch(() => []),
-    ]).then(([products, orders, customers, gallery]) => {
-      const revenue = (orders as { total?: number }[]).reduce(
-        (s, o) => s + (o.total || 0),
-        0
-      );
+    ]).then(([products, orders, customers]) => {
+      const os = orders as { total?: number; paymentStatus?: string }[];
+      const paid = os.filter((o) => o.paymentStatus === "paid");
+      const revenue = paid.reduce((s, o) => s + (o.total || 0), 0);
       setStats({
         products: products.length,
         outOfStock: products.filter((p) => !p.inStock).length,
-        orders: orders.length,
+        orders: os.length,
         revenue,
+        unpaid: os.filter((o) => (o.paymentStatus || "unpaid") === "unpaid").length,
+        paidOrders: paid.length,
         customers: customers.length,
-        gallery: gallery.length,
       });
+      setRecent(
+        (orders as { id: string; name?: string; total?: number; paymentStatus?: string; createdAt?: number }[])
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+          .slice(0, 5)
+      );
     });
   }, []);
 
@@ -81,35 +68,77 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
     return <p className="animate-pulse text-neutral-500 text-sm">Loading stats...</p>;
   }
 
-  const quick = [
-    { label: "Add product", tab: "products" },
-    { label: "Send drop email", tab: "emails" },
-    { label: "View orders", tab: "orders" },
-  ];
-
   return (
     <div>
-      <h2 className="text-xl font-black tracking-tight mb-6">OVERVIEW</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatCard label="REVENUE" value={formatPrice(stats.revenue)} sub={`${stats.orders} orders`} />
-        <StatCard label="PRODUCTS" value={String(stats.products)} sub={stats.outOfStock > 0 ? `${stats.outOfStock} out of stock` : "all in stock"} />
-        <StatCard label="CUSTOMERS" value={String(stats.customers)} />
-        <StatCard label="GALLERY SHOTS" value={String(stats.gallery)} />
+      <h2 className="text-xl font-black tracking-tight mb-5">OVERVIEW</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <StatCard
+          label="REVENUE"
+          value={formatPrice(stats.revenue)}
+          sub={`${stats.paidOrders} paid orders`}
+          accent="bg-green-500"
+        />
+        <StatCard
+          label="AWAITING PAYMENT"
+          value={String(stats.unpaid)}
+          sub="unpaid orders"
+          accent="bg-yellow-500"
+          onClick={() => setTab("orders")}
+        />
+        <StatCard
+          label="ORDERS"
+          value={String(stats.orders)}
+          sub="all time"
+          onClick={() => setTab("orders")}
+        />
+        <StatCard
+          label="PRODUCTS"
+          value={String(stats.products)}
+          sub={stats.outOfStock > 0 ? `${stats.outOfStock} out of stock` : "all in stock"}
+          accent={stats.outOfStock > 0 ? "bg-red-500" : undefined}
+          onClick={() => setTab("products")}
+        />
+        <StatCard
+          label="CUSTOMERS"
+          value={String(stats.customers)}
+          onClick={() => setTab("customers")}
+        />
+        <StatCard
+          label="DELIVERIES"
+          value="→"
+          sub="manage fulfillment"
+          onClick={() => setTab("deliveries")}
+        />
       </div>
+
       <h3 className="text-[11px] font-bold tracking-[0.2em] text-neutral-500 mt-8 mb-3">
-        QUICK ACTIONS
+        RECENT ORDERS
       </h3>
-      <div className="flex flex-wrap gap-2">
-        {quick.map((q) => (
-          <button
-            key={q.tab}
-            onClick={() => setTab(q.tab)}
-            className="bg-white text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90"
-          >
-            {q.label} →
-          </button>
-        ))}
-      </div>
+      {recent.length === 0 ? (
+        <p className="text-neutral-500 text-sm">No orders yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {recent.map((o) => (
+            <button
+              key={o.id}
+              onClick={() => setTab("orders")}
+              className="w-full text-left bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 hover:border-neutral-600 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold font-mono">
+                  #{o.id.slice(0, 8).toUpperCase()}
+                  <span className="font-sans font-normal text-neutral-500 ml-2">
+                    {o.name || ""}
+                  </span>
+                </p>
+                <span className="text-sm font-bold shrink-0">
+                  {o.total ? formatPrice(o.total) : "—"}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

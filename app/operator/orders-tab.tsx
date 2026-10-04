@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listOrders, updateOrderStatus, markOrderPaid } from "@/lib/admin";
 import { onOrderStatusChange } from "@/lib/email-triggers";
 import { formatPrice } from "@/lib/products";
 import { useToast } from "@/components/toast";
+import {
+  Modal,
+  Pill,
+  paymentPill,
+  orderPill,
+  Segmented,
+  SectionLabel,
+  ActionButton,
+} from "./ui";
 
 type Order = {
   id: string;
   userId?: string;
   email?: string;
   name?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
   status?: string;
   paymentStatus?: string;
   total?: number;
@@ -18,15 +31,9 @@ type Order = {
   deliveryFee?: number;
   createdAt?: number;
   expiresAt?: number;
+  paidAt?: string;
   paystackRef?: string;
-  items?: { slug: string; qty: number; size: string }[];
-};
-
-const PAYMENT_COLORS: Record<string, string> = {
-  unpaid: "bg-yellow-900/40 text-yellow-400",
-  paid: "bg-green-900/40 text-green-400",
-  failed: "bg-red-900/40 text-red-400",
-  refunded: "bg-neutral-700 text-neutral-300",
+  items?: { slug: string; name: string; qty: number; size: string; price: number }[];
 };
 
 const isExpired = (o: Order) =>
@@ -34,56 +41,46 @@ const isExpired = (o: Order) =>
   !!o.expiresAt &&
   Date.now() > o.expiresAt;
 
-const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+const FULFILLMENT = [
+  { id: "pending", label: "Pending" },
+  { id: "confirmed", label: "Confirmed" },
+  { id: "shipped", label: "Shipped" },
+  { id: "delivered", label: "Delivered" },
+  { id: "cancelled", label: "Cancelled" },
+];
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-900/40 text-yellow-400",
-  confirmed: "bg-blue-900/40 text-blue-400",
-  shipped: "bg-purple-900/40 text-purple-400",
-  delivered: "bg-green-900/40 text-green-400",
-  cancelled: "bg-red-900/40 text-red-400",
-};
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "unpaid", label: "Unpaid" },
+  { id: "paid", label: "Paid" },
+  { id: "failed", label: "Failed" },
+] as const;
 
-export default function OrdersTab() {
+function OrderModal({
+  order,
+  onClose,
+  onChanged,
+}: {
+  order: Order;
+  onClose: () => void;
+  onChanged: (o: Order) => void;
+}) {
   const toast = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [o, setO] = useState(order);
 
-  useEffect(() => {
-    listOrders()
-      .then((o) => setOrders(o as Order[]))
-      .catch(() => setOrders([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const markPaid = async (o: Order) => {
-    setBusy(o.id);
-    try {
-      await markOrderPaid(o.id);
-      setOrders((prev) =>
-        prev.map((x) =>
-          x.id === o.id
-            ? { ...x, paymentStatus: "paid", status: "confirmed" }
-            : x
-        )
-      );
-      toast({ title: "Marked as paid", variant: "success" });
-    } catch {
-      toast({ title: "Update failed", variant: "error" });
-    } finally {
-      setBusy(null);
-    }
+  const patch = (p: Partial<Order>) => {
+    const next = { ...o, ...p };
+    setO(next);
+    onChanged(next);
   };
 
-  const setStatus = async (o: Order, status: string) => {
+  const setStatus = async (status: string) => {
     if (o.status === status) return;
-    setBusy(o.id);
+    setBusy(true);
     try {
       await updateOrderStatus(o.id, status);
-      setOrders((prev) =>
-        prev.map((x) => (x.id === o.id ? { ...x, status } : x))
-      );
+      patch({ status });
       if (o.email) {
         await onOrderStatusChange({
           email: o.email,
@@ -94,24 +91,22 @@ export default function OrdersTab() {
       }
       toast({
         title: `Order ${status}`,
-        description: `#${o.id.slice(0, 8).toUpperCase()}${o.email ? " — customer emailed" : ""}`,
+        description: "Customer emailed",
         variant: "success",
       });
     } catch {
       toast({ title: "Status update failed", variant: "error" });
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
-  /** Re-check a pending order against Paystack (e.g. customer closed the tab).
-   *  Server confirms + emails when Paystack reports success. */
-  const verifyPayment = async (o: Order) => {
+  const verifyPayment = async () => {
     if (!o.paystackRef) {
       toast({ title: "No Paystack reference on this order", variant: "info" });
       return;
     }
-    setBusy(o.id);
+    setBusy(true);
     try {
       const res = await fetch("/api/paystack/verify", {
         method: "POST",
@@ -120,21 +115,187 @@ export default function OrdersTab() {
       });
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || "Verify failed");
-      const status = j.success ? "confirmed" : "failed";
-      setOrders((prev) =>
-        prev.map((x) => (x.id === o.id ? { ...x, status } : x))
-      );
+      if (j.success) {
+        patch({ status: "confirmed", paymentStatus: "paid" });
+        toast({ title: "Payment confirmed", variant: "success" });
+      } else {
+        patch({ status: "cancelled", paymentStatus: "failed" });
+        toast({
+          title: "No successful payment found",
+          description: j.reason || "Paystack has no completed transaction for this reference.",
+          variant: "error",
+        });
+      }
+    } catch (e) {
       toast({
-        title: j.success ? "Payment confirmed" : "Payment failed",
-        description: `#${o.id.slice(0, 8).toUpperCase()}`,
-        variant: j.success ? "success" : "error",
+        title: "Verify failed",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "error",
       });
-    } catch {
-      toast({ title: "Verify failed", variant: "error" });
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
+
+  const markPaid = async () => {
+    setBusy(true);
+    try {
+      await markOrderPaid(o.id);
+      patch({ paymentStatus: "paid", status: "confirmed" });
+      toast({ title: "Marked as paid", variant: "success" });
+    } catch {
+      toast({ title: "Update failed", variant: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const unpaid = (o.paymentStatus || "unpaid") === "unpaid";
+
+  return (
+    <Modal title={`#${o.id.slice(0, 8).toUpperCase()}`} onClose={onClose}>
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-2">
+          {orderPill(o.status)}
+          {paymentPill(o.paymentStatus)}
+          {isExpired(o) && <Pill tone="neutral">EXPIRED</Pill>}
+          <span className="text-xs text-neutral-500 ml-auto">
+            {o.createdAt
+              ? new Date(o.createdAt).toLocaleString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : ""}
+          </span>
+        </div>
+
+        <div>
+          <SectionLabel>CUSTOMER</SectionLabel>
+          <p className="text-sm font-bold">{o.name || "—"}</p>
+          <p className="text-sm text-neutral-400">{o.email}</p>
+          <p className="text-sm text-neutral-400">{o.phone}</p>
+          <p className="text-sm text-neutral-400 mt-1">
+            {o.address}, {o.city}
+            {o.state ? `, ${o.state}` : ""}
+          </p>
+        </div>
+
+        <div>
+          <SectionLabel>ITEMS</SectionLabel>
+          <div className="space-y-2">
+            {(o.items || []).map((it, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span>
+                  <span className="font-semibold">{it.name || it.slug}</span>
+                  <span className="text-neutral-500">
+                    {" "}
+                    · {it.size} × {it.qty}
+                  </span>
+                </span>
+                <span className="font-semibold">
+                  {it.price ? formatPrice(it.price * it.qty) : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-neutral-800 mt-3 pt-3 space-y-1.5 text-sm">
+            <div className="flex justify-between text-neutral-400">
+              <span>Subtotal</span>
+              <span>{formatPrice(o.itemsTotal || 0)}</span>
+            </div>
+            <div className="flex justify-between text-neutral-400">
+              <span>Delivery</span>
+              <span>{formatPrice(o.deliveryFee || 0)}</span>
+            </div>
+            <div className="flex justify-between font-black text-base">
+              <span>Total</span>
+              <span>{formatPrice(o.total || 0)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <SectionLabel>PAYMENT</SectionLabel>
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-neutral-500">Status</span>
+              {paymentPill(o.paymentStatus)}
+            </div>
+            {o.paystackRef && (
+              <div className="flex justify-between text-sm gap-2">
+                <span className="text-neutral-500 shrink-0">Reference</span>
+                <span className="font-mono text-xs text-neutral-300 truncate">
+                  {o.paystackRef}
+                </span>
+              </div>
+            )}
+            {o.paidAt && (
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-500">Paid at</span>
+                <span className="text-neutral-300 text-xs">
+                  {new Date(o.paidAt).toLocaleString("en-NG")}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <SectionLabel>ACTIONS</SectionLabel>
+          <div className="space-y-2">
+            {unpaid && (
+              <>
+                <ActionButton kind="primary" onClick={verifyPayment} disabled={busy}>
+                  {busy ? "Checking..." : "Verify payment with Paystack"}
+                </ActionButton>
+                <ActionButton kind="success" onClick={markPaid} disabled={busy}>
+                  Mark as paid manually
+                </ActionButton>
+              </>
+            )}
+          </div>
+          <p className="text-xs text-neutral-500 mt-2">
+            Verify asks Paystack directly — it only confirms when Paystack
+            reports a successful transaction. Mark paid is the manual override.
+          </p>
+        </div>
+
+        <div>
+          <SectionLabel>FULFILLMENT STATUS</SectionLabel>
+          <Segmented
+            options={FULFILLMENT}
+            value={o.status || "pending"}
+            onChange={setStatus}
+            disabled={busy}
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export default function OrdersTab() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] =
+    useState<(typeof FILTERS)[number]["id"]>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    listOrders()
+      .then((o) => setOrders(o as Order[]))
+      .catch(() => setOrders([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return orders;
+    return orders.filter((o) => (o.paymentStatus || "unpaid") === filter);
+  }, [orders, filter]);
+
+  const openOrder = openId ? orders.find((o) => o.id === openId) || null : null;
 
   if (loading) {
     return <p className="animate-pulse text-neutral-500 text-sm">Loading orders...</p>;
@@ -142,94 +303,70 @@ export default function OrdersTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-black tracking-tight mb-6">
+      <h2 className="text-xl font-black tracking-tight mb-5">
         ORDERS ({orders.length})
       </h2>
-      {orders.length === 0 ? (
+      <div className="flex gap-2 mb-5 overflow-x-auto">
+        {FILTERS.map((f) => {
+          const count =
+            f.id === "all"
+              ? orders.length
+              : orders.filter((o) => (o.paymentStatus || "unpaid") === f.id).length;
+          return (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`whitespace-nowrap text-xs font-bold px-4 py-2 rounded-full ${
+                filter === f.id
+                  ? "bg-white text-black"
+                  : "bg-neutral-900 border border-neutral-800 text-neutral-400"
+              }`}
+            >
+              {f.label} · {count}
+            </button>
+          );
+        })}
+      </div>
+      {filtered.length === 0 ? (
         <div className="border border-dashed border-neutral-800 rounded-xl p-10 text-center">
-          <p className="text-neutral-500 text-sm">
-            No orders yet. They will appear here once checkout goes live with
-            Paystack.
-          </p>
+          <p className="text-neutral-500 text-sm">No orders in this view.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {orders.map((o) => (
-            <div
+        <div className="space-y-2">
+          {filtered.map((o) => (
+            <button
               key={o.id}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl p-4"
+              onClick={() => setOpenId(o.id)}
+              className="w-full text-left bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3.5 hover:border-neutral-600 transition-colors"
             >
-              <div className="flex justify-between items-start gap-3">
-                <div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
                   <p className="font-bold text-sm font-mono">
                     #{o.id.slice(0, 8).toUpperCase()}
                   </p>
-                  <p className="text-neutral-500 text-xs mt-1">
+                  <p className="text-neutral-500 text-xs mt-0.5 truncate">
                     {o.name || o.email || "Guest"} · {o.items?.length || 0}{" "}
                     items · {o.total ? formatPrice(o.total) : "—"}
                   </p>
-                  {o.items && o.items.length > 0 && (
-                    <p className="text-neutral-500 text-xs mt-1">
-                      {o.items.map((i) => `${i.slug} (${i.size} ×${i.qty})`).join(", ")}
-                    </p>
-                  )}
                 </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <span
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                      isExpired(o)
-                        ? "bg-neutral-800 text-neutral-400"
-                        : STATUS_COLORS[o.status || "pending"]
-                    }`}
-                  >
-                    {isExpired(o) ? "EXPIRED" : (o.status || "pending").toUpperCase()}
-                  </span>
-                  <span
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                      PAYMENT_COLORS[o.paymentStatus || "unpaid"]
-                    }`}
-                  >
-                    {(o.paymentStatus || "unpaid").toUpperCase()}
-                  </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {paymentPill(o.paymentStatus)}
+                  {orderPill(o.status)}
+                  <span className="text-neutral-500 font-bold">→</span>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {(o.status === "pending" || !o.status) && o.paystackRef && (
-                  <button
-                    disabled={busy === o.id}
-                    onClick={() => verifyPayment(o)}
-                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white text-black disabled:opacity-50"
-                  >
-                    {busy === o.id ? "..." : "VERIFY PAYMENT"}
-                  </button>
-                )}
-                {o.paymentStatus !== "paid" && (
-                  <button
-                    disabled={busy === o.id}
-                    onClick={() => markPaid(o)}
-                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-green-700 text-white disabled:opacity-50"
-                  >
-                    {busy === o.id ? "..." : "MARK PAID"}
-                  </button>
-                )}
-                {STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    disabled={busy === o.id || o.status === s}
-                    onClick={() => setStatus(o, s)}
-                    className={`text-[11px] font-bold px-3 py-1.5 rounded-full ${
-                      o.status === s
-                        ? "bg-white text-black"
-                        : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-                    } disabled:opacity-50`}
-                  >
-                    {busy === o.id ? "..." : s.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
+            </button>
           ))}
         </div>
+      )}
+      {openOrder && (
+        <OrderModal
+          order={openOrder}
+          onClose={() => setOpenId(null)}
+          onChanged={(next) =>
+            setOrders((prev) => prev.map((x) => (x.id === next.id ? next : x)))
+          }
+        />
       )}
     </div>
   );

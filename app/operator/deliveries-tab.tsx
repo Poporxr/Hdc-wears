@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { listDeliveries, updateDeliveryStatus } from "@/lib/admin";
 import { useToast } from "@/components/toast";
 import { formatPrice } from "@/lib/products";
+import {
+  Modal,
+  Pill,
+  Segmented,
+  SectionLabel,
+} from "./ui";
 
 type Delivery = {
   id: string;
@@ -18,19 +24,91 @@ type Delivery = {
   createdAt?: number;
 };
 
-const STATUSES = ["pending", "dispatched", "delivered"];
+const STEPS = [
+  { id: "pending", label: "Pending" },
+  { id: "dispatched", label: "Dispatched" },
+  { id: "delivered", label: "Delivered" },
+];
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-900/40 text-yellow-400",
-  dispatched: "bg-blue-900/40 text-blue-400",
-  delivered: "bg-green-900/40 text-green-400",
-};
+function deliveryPill(status?: string) {
+  const s = (status || "pending").toUpperCase();
+  const tone =
+    status === "delivered" ? "green" : status === "dispatched" ? "blue" : "yellow";
+  return <Pill tone={tone as "green"}>{s}</Pill>;
+}
+
+function DeliveryModal({
+  delivery,
+  onClose,
+  onChanged,
+}: {
+  delivery: Delivery;
+  onClose: () => void;
+  onChanged: (d: Delivery) => void;
+}) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [d, setD] = useState(delivery);
+
+  const setStatus = async (status: string) => {
+    if (d.status === status) return;
+    setBusy(true);
+    try {
+      await updateDeliveryStatus(d.id, status);
+      const next = { ...d, status };
+      setD(next);
+      onChanged(next);
+      toast({ title: `Delivery ${status}`, variant: "success" });
+    } catch {
+      toast({ title: "Update failed", variant: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal title="DELIVERY" onClose={onClose}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          {deliveryPill(d.status)}
+          <span className="text-xs text-neutral-500">
+            Order #{d.orderId?.slice(0, 8).toUpperCase()}
+          </span>
+        </div>
+
+        <div>
+          <SectionLabel>RECIPIENT</SectionLabel>
+          <p className="text-sm font-bold">{d.name}</p>
+          <p className="text-sm text-neutral-400 mt-1">
+            {d.address}, {d.city}
+            {d.state ? `, ${d.state}` : ""}
+          </p>
+          <p className="text-sm text-neutral-400 mt-1">{d.phone}</p>
+        </div>
+
+        <div className="flex justify-between text-sm bg-neutral-900 border border-neutral-800 rounded-xl p-3.5">
+          <span className="text-neutral-500">Delivery fee</span>
+          <span className="font-bold">{formatPrice(d.fee || 0)}</span>
+        </div>
+
+        <div>
+          <SectionLabel>DELIVERY STATUS</SectionLabel>
+          <Segmented
+            options={STEPS}
+            value={d.status || "pending"}
+            onChange={setStatus}
+            disabled={busy}
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export default function DeliveriesTab() {
-  const toast = useToast();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     listDeliveries()
@@ -39,21 +117,7 @@ export default function DeliveriesTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  const setStatus = async (d: Delivery, status: string) => {
-    if (d.status === status) return;
-    setBusy(d.id);
-    try {
-      await updateDeliveryStatus(d.id, status);
-      setDeliveries((prev) =>
-        prev.map((x) => (x.id === d.id ? { ...x, status } : x))
-      );
-      toast({ title: `Delivery ${status}`, variant: "success" });
-    } catch {
-      toast({ title: "Update failed", variant: "error" });
-    } finally {
-      setBusy(null);
-    }
-  };
+  const open = openId ? deliveries.find((d) => d.id === openId) || null : null;
 
   if (loading) {
     return <p className="animate-pulse text-neutral-500 text-sm">Loading deliveries...</p>;
@@ -61,7 +125,7 @@ export default function DeliveriesTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-black tracking-tight mb-6">
+      <h2 className="text-xl font-black tracking-tight mb-5">
         DELIVERIES ({deliveries.length})
       </h2>
       {deliveries.length === 0 ? (
@@ -71,52 +135,37 @@ export default function DeliveriesTab() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {deliveries.map((d) => (
-            <div
+            <button
               key={d.id}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl p-4"
+              onClick={() => setOpenId(d.id)}
+              className="w-full text-left bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3.5 hover:border-neutral-600 transition-colors"
             >
-              <div className="flex justify-between items-start gap-3">
-                <div>
-                  <p className="font-bold text-sm">{d.name}</p>
-                  <p className="text-neutral-500 text-xs mt-1">
-                    {d.address}, {d.city}
-                    {d.state ? `, ${d.state}` : ""}
-                  </p>
-                  <p className="text-neutral-500 text-xs mt-0.5">
-                    {d.phone} · Order #
-                    {d.orderId?.slice(0, 8).toUpperCase()} · Fee{" "}
-                    {formatPrice(d.fee || 0)}
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm truncate">{d.name}</p>
+                  <p className="text-neutral-500 text-xs mt-0.5 truncate">
+                    {d.address}, {d.city} · {formatPrice(d.fee || 0)}
                   </p>
                 </div>
-                <span
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                    STATUS_COLORS[d.status || "pending"]
-                  }`}
-                >
-                  {(d.status || "pending").toUpperCase()}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {deliveryPill(d.status)}
+                  <span className="text-neutral-500 font-bold">→</span>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    disabled={busy === d.id || d.status === s}
-                    onClick={() => setStatus(d, s)}
-                    className={`text-[11px] font-bold px-3 py-1.5 rounded-full ${
-                      d.status === s
-                        ? "bg-white text-black"
-                        : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-                    } disabled:opacity-50`}
-                  >
-                    {busy === d.id ? "..." : s.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
+            </button>
           ))}
         </div>
+      )}
+      {open && (
+        <DeliveryModal
+          delivery={open}
+          onClose={() => setOpenId(null)}
+          onChanged={(next) =>
+            setDeliveries((prev) => prev.map((x) => (x.id === next.id ? next : x)))
+          }
+        />
       )}
     </div>
   );
