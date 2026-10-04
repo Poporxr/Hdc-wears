@@ -1,4 +1,12 @@
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  deleteDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
 import { ORDER_EXPIRY_MS } from "./products";
 
@@ -36,7 +44,6 @@ export async function isAdmin(
   return isAdminUid(uid);
 }
 
-import { collection, deleteDoc, getDocs, setDoc } from "firebase/firestore";
 import type { Product } from "./products";
 
 /** Admin: list all user profiles. */
