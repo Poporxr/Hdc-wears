@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -12,6 +12,7 @@ import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { createOrder, setOrderPaystackRef } from "@/lib/admin";
+import { DELIVERY_FEE_NGN } from "@/lib/products";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
@@ -28,6 +29,8 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [paying, setPaying] = useState(false);
+  const payGuard = useRef(false);
+  const total = subtotal + DELIVERY_FEE_NGN;
 
   const nameValue = formName || profile?.name || "";
   const phoneValue = formPhone || profile?.phone || "";
@@ -35,7 +38,8 @@ export default function CheckoutPage() {
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || payGuard.current) return; // idempotency: one attempt at a time
+    payGuard.current = true;
     setPaying(true);
     try {
       // Save missing profile details
@@ -71,7 +75,9 @@ export default function CheckoutPage() {
         city: city.trim(),
         state: state.trim(),
         items: orderItems,
-        total: subtotal,
+        itemsTotal: subtotal,
+        deliveryFee: DELIVERY_FEE_NGN,
+        total,
       });
 
       // 2. Initialize Paystack (server recomputes the total from live prices)
@@ -99,6 +105,7 @@ export default function CheckoutPage() {
         variant: "error",
       });
       setPaying(false);
+      payGuard.current = false;
     }
   };
 
@@ -200,7 +207,7 @@ export default function CheckoutPage() {
                 disabled={paying}
                 className="w-full bg-detta-navy text-white font-bold text-sm tracking-wide py-4 rounded-lg disabled:opacity-60"
               >
-                {paying ? "STARTING PAYMENT..." : `PAY ${formatPrice(subtotal)}`}
+                {paying ? "STARTING PAYMENT..." : `PAY ${formatPrice(total)}`}
               </button>
             </form>
 
@@ -236,9 +243,19 @@ export default function CheckoutPage() {
                   );
                 })}
               </ul>
-              <div className="border-t border-neutral-200 mt-6 pt-4 flex justify-between font-bold">
-                <span>Total</span>
-                <span>{formatPrice(subtotal)}</span>
+              <div className="border-t border-neutral-200 mt-6 pt-4 space-y-2 text-sm">
+                <div className="flex justify-between text-neutral-500">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-neutral-500">
+                  <span>Delivery</span>
+                  <span>{formatPrice(DELIVERY_FEE_NGN)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-base pt-1">
+                  <span>Total</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
               </div>
             </aside>
           </div>

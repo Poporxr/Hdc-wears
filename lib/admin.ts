@@ -1,5 +1,6 @@
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
+import { ORDER_EXPIRY_MS } from "./products";
 
 /** Admin emails, comma-separated in NEXT_PUBLIC_ADMIN_EMAILS. */
 export function adminEmails(): string[] {
@@ -88,6 +89,8 @@ export async function createOrder(data: {
   city: string;
   state: string;
   items: { slug: string; name: string; price: number; qty: number; size: string }[];
+  itemsTotal: number;
+  deliveryFee: number;
   total: number;
 }): Promise<string> {
   if (!db) throw new Error("Firebase not configured");
@@ -96,6 +99,7 @@ export async function createOrder(data: {
     status: "pending",
     paystackRef: null,
     createdAt: Date.now(),
+    expiresAt: Date.now() + ORDER_EXPIRY_MS, // 30 min to pay
   });
   return ref.id;
 }

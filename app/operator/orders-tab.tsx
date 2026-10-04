@@ -13,10 +13,18 @@ type Order = {
   name?: string;
   status?: string;
   total?: number;
+  itemsTotal?: number;
+  deliveryFee?: number;
   createdAt?: number;
+  expiresAt?: number;
   paystackRef?: string;
   items?: { slug: string; qty: number; size: string }[];
 };
+
+const isExpired = (o: Order) =>
+  (o.status === "pending" || !o.status) &&
+  !!o.expiresAt &&
+  Date.now() > o.expiresAt;
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
@@ -141,10 +149,12 @@ export default function OrdersTab() {
                 </div>
                 <span
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                    STATUS_COLORS[o.status || "pending"]
+                    isExpired(o)
+                      ? "bg-neutral-800 text-neutral-400"
+                      : STATUS_COLORS[o.status || "pending"]
                   }`}
                 >
-                  {(o.status || "pending").toUpperCase()}
+                  {isExpired(o) ? "EXPIRED" : (o.status || "pending").toUpperCase()}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">

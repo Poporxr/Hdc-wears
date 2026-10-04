@@ -21,7 +21,7 @@ const EMPTY: Product = {
   slug: "",
   name: "",
   color: "",
-  price: 24000,
+  price: 65000,
   category: "clothing",
   inStock: true,
   description: "",

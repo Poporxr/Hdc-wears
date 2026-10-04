@@ -77,21 +77,57 @@ function CallbackInner() {
           j.orderId || sessionStorage.getItem("hdc_last_order") || "";
         if (!orderId || !db) throw new Error("Order not found");
 
+        // 2. Load the order to check expiry, amount, and current status
+        const snap = await getDoc(doc(db, "orders", orderId));
+        const o = snap.data() as {
+          email?: string;
+          name?: string;
+          items?: { name: string; qty: number; price: number }[];
+          total?: number;
+          status?: string;
+          expiresAt?: number;
+        };
+        if (!o) throw new Error("Order not found");
+
+        // Already handled (e.g. page refreshed) — show success, no duplicate email
+        if (o.status === "confirmed") {
+          sessionStorage.removeItem("hdc_last_order");
+          setState({ kind: "success", orderId, total: o.total || j.amountNgn, name: "" });
+          return;
+        }
+
+        // Expired unpaid order
+        if (o.expiresAt && Date.now() > o.expiresAt && o.status === "pending") {
+          try {
+            await confirmOrder(orderId, "failed");
+          } catch {}
+          setState({
+            kind: "failed",
+            reason: "This order expired before payment completed. Please check out again.",
+          });
+          return;
+        }
+
+        // Amount must match what the order says
+        if (o.total !== undefined && Math.round(j.amountNgn) !== Math.round(o.total)) {
+          try {
+            await confirmOrder(orderId, "failed");
+          } catch {}
+          setState({
+            kind: "failed",
+            reason: "Paid amount did not match the order total. Contact us if you were charged.",
+          });
+          return;
+        }
+
         if (j.success) {
-          // 2. Mark the order confirmed (owner updating own pending order)
+          // 3. Mark the order confirmed (owner updating own pending order)
           await confirmOrder(orderId, "confirmed", j.paidAt);
           sessionStorage.removeItem("hdc_last_order");
 
-          // 3. Fire the confirmation email
+          // 4. Fire the confirmation email (once)
           try {
-            const snap = await getDoc(doc(db, "orders", orderId));
-            const o = snap.data() as {
-              email?: string;
-              name?: string;
-              items?: { name: string; qty: number; price: number }[];
-              total?: number;
-            };
-            if (o?.email) {
+            if (o.email) {
               await sendConfirmation({
                 email: o.email,
                 name: o.name || "there",

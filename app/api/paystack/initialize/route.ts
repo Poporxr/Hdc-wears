@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Server-side total from live prices — the source of truth.
-    const total = await computeTotal(items);
+    // The reference is unique per order AND per attempt: hdc_<orderId>_<timestamp>
+    const { itemsTotal, deliveryFee, total } = await computeTotal(items);
     if (total <= 0) {
       return NextResponse.json({ error: "Invalid order total" }, { status: 400 });
     }
@@ -47,6 +48,8 @@ export async function POST(req: NextRequest) {
       ok: true,
       authorization_url: data.authorization_url,
       reference: data.reference,
+      itemsTotal,
+      deliveryFee,
       total,
     });
   } catch (err) {

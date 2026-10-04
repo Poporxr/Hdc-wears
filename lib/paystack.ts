@@ -1,4 +1,5 @@
 import { createHmac } from "crypto";
+import { DELIVERY_FEE_NGN } from "./products";
 
 /**
  * Server-only Paystack helpers. Never import this from client components.
@@ -39,16 +40,24 @@ export async function fetchPriceMap(): Promise<Map<string, number>> {
   return map;
 }
 
-/** Recompute the order total (NGN) from items using live prices. */
-export async function computeTotal(items: CartItemInput[]): Promise<number> {
+/** Recompute the order total (NGN) from items using live prices, plus delivery. */
+export async function computeTotal(items: CartItemInput[]): Promise<{
+  itemsTotal: number;
+  deliveryFee: number;
+  total: number;
+}> {
   const prices = await fetchPriceMap();
-  let total = 0;
+  let itemsTotal = 0;
   for (const i of items) {
     const price = prices.get(i.slug);
     if (price === undefined) throw new Error(`Unknown product: ${i.slug}`);
-    total += price * Math.max(1, i.qty);
+    itemsTotal += price * Math.max(1, i.qty);
   }
-  return total;
+  return {
+    itemsTotal,
+    deliveryFee: DELIVERY_FEE_NGN,
+    total: itemsTotal + DELIVERY_FEE_NGN,
+  };
 }
 
 export async function initializeTransaction(opts: {
