@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
 
 /** Admin emails, comma-separated in NEXT_PUBLIC_ADMIN_EMAILS. */
@@ -76,4 +76,47 @@ export async function updateOrderStatus(orderId: string, status: string) {
   if (!db) throw new Error("Firebase not configured");
   const { updateDoc } = await import("firebase/firestore");
   await updateDoc(doc(db, "orders", orderId), { status });
+}
+
+/** Customer: create a pending order (signed-in users only, per rules). */
+export async function createOrder(data: {
+  userId: string;
+  email: string;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  items: { slug: string; name: string; price: number; qty: number; size: string }[];
+  total: number;
+}): Promise<string> {
+  if (!db) throw new Error("Firebase not configured");
+  const ref = await addDoc(collection(db, "orders"), {
+    ...data,
+    status: "pending",
+    paystackRef: null,
+    createdAt: Date.now(),
+  });
+  return ref.id;
+}
+
+/** Customer: attach the Paystack reference to their own pending order. */
+export async function setOrderPaystackRef(orderId: string, paystackRef: string) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc } = await import("firebase/firestore");
+  await updateDoc(doc(db, "orders", orderId), { paystackRef });
+}
+
+/** Customer: mark their own pending order confirmed/failed after verification. */
+export async function confirmOrder(
+  orderId: string,
+  status: "confirmed" | "failed",
+  paidAt?: string
+) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc } = await import("firebase/firestore");
+  await updateDoc(doc(db, "orders", orderId), {
+    status,
+    ...(paidAt ? { paidAt } : {}),
+  });
 }

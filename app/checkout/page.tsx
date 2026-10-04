@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { useToast } from "@/components/toast";
 import { formatPrice, img } from "@/lib/products";
 import { getProductSync } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { createOrder, setOrderPaystackRef } from "@/lib/admin";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
@@ -16,58 +19,88 @@ const inputCls =
 export default function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { products } = useProducts();
-  const { user, profile, saveProfile } = useAuth();
-  const [placed, setPlaced] = useState(false);
+  const { user, profile, saveProfile, loading: authLoading } = useAuth();
+  const toast = useToast();
+
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
-  const [formEmail, setFormEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [paying, setPaying] = useState(false);
 
-  // Prefill from profile when available
   const nameValue = formName || profile?.name || "";
   const phoneValue = formPhone || profile?.phone || "";
-  const emailValue = formEmail || profile?.email || user?.email || "";
+  const emailValue = profile?.email || user?.email || "";
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
-    // If signed in but profile is missing name/phone, save what they entered
-    if (user && profile) {
-      const updates: { name?: string; phone?: string } = {};
-      if (!profile.name && nameValue.trim()) updates.name = nameValue.trim();
-      if (!profile.phone && phoneValue.trim()) updates.phone = phoneValue.trim();
-      if (Object.keys(updates).length > 0) {
-        try {
-          await saveProfile(updates);
-        } catch {}
+    if (!user) return;
+    setPaying(true);
+    try {
+      // Save missing profile details
+      if (profile) {
+        const updates: { name?: string; phone?: string } = {};
+        if (!profile.name && nameValue.trim()) updates.name = nameValue.trim();
+        if (!profile.phone && phoneValue.trim()) updates.phone = phoneValue.trim();
+        if (Object.keys(updates).length > 0) {
+          try {
+            await saveProfile(updates);
+          } catch {}
+        }
       }
-    }
-    setPlaced(true);
-    clear();
-  };
 
-  if (placed) {
-    return (
-      <div className="min-h-screen bg-white text-neutral-900">
-        <Header />
-        <main className="max-w-xl mx-auto px-4 py-16 text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center text-3xl">
-            ✓
-          </div>
-          <h1 className="font-display font-black text-3xl mt-6">ORDER PLACED</h1>
-          <p className="text-neutral-500 text-sm mt-3">
-            Thanks for shopping with HDC Wears. This is a demo checkout —
-            no payment was processed and no order was created.
-          </p>
-          <Link
-            href="/"
-            className="inline-block mt-8 bg-detta-navy text-white text-sm font-bold px-10 py-3.5 rounded-lg"
-          >
-            BACK TO HOME
-          </Link>
-        </main>
-        <SiteFooter />
-      </div>
-    );
-  }
+      const orderItems = items.map((item) => {
+        const p = getProductSync(products, item.slug);
+        return {
+          slug: item.slug,
+          name: p?.name || item.slug,
+          price: p?.price || 0,
+          qty: item.qty,
+          size: item.size,
+        };
+      });
+
+      // 1. Create the pending order doc (signed-in owner, per rules)
+      const orderId = await createOrder({
+        userId: user.uid,
+        email: emailValue,
+        name: nameValue.trim(),
+        phone: phoneValue.trim(),
+        address: address.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        items: orderItems,
+        total: subtotal,
+      });
+
+      // 2. Initialize Paystack (server recomputes the total from live prices)
+      const res = await fetch("/api/paystack/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          email: emailValue,
+          items: items.map((i) => ({ slug: i.slug, qty: i.qty, size: i.size })),
+        }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || "Could not start payment");
+
+      // 3. Attach the reference, then hand off to Paystack
+      await setOrderPaystackRef(orderId, j.reference);
+      sessionStorage.setItem("hdc_last_order", orderId);
+      clear();
+      window.location.href = j.authorization_url;
+    } catch (err) {
+      toast({
+        title: "Payment failed to start",
+        description: err instanceof Error ? err.message : "Try again.",
+        variant: "error",
+      });
+      setPaying(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -87,17 +120,24 @@ export default function CheckoutPage() {
               START SHOPPING
             </Link>
           </div>
+        ) : !authLoading && !user ? (
+          <div className="max-w-md mx-auto text-center py-10">
+            <h2 className="font-bold text-lg mb-2">Sign in to check out</h2>
+            <p className="text-neutral-500 text-sm mb-6">
+              One tap with Google — we need an account to track your order.
+            </p>
+            <GoogleSignInButton label="CONTINUE WITH GOOGLE" />
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-10">
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-4" onSubmit={handlePay}>
               <h2 className="font-bold text-lg">Contact</h2>
               <input
-                required
                 type="email"
                 placeholder="Email*"
                 className={inputCls}
                 value={emailValue}
-                onChange={(e) => setFormEmail(e.target.value)}
+                disabled
               />
               <input
                 required
@@ -117,23 +157,50 @@ export default function CheckoutPage() {
                 value={nameValue}
                 onChange={(e) => setFormName(e.target.value)}
               />
-              <input required type="text" placeholder="Address*" className={inputCls} />
+              <input
+                required
+                type="text"
+                placeholder="Address*"
+                className={inputCls}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
               <div className="grid grid-cols-2 gap-4">
-                <input required type="text" placeholder="City*" className={inputCls} />
-                <input type="text" placeholder="Region" className={inputCls} />
+                <input
+                  required
+                  type="text"
+                  placeholder="City*"
+                  className={inputCls}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="State"
+                  className={inputCls}
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
               </div>
 
               <h2 className="font-bold text-lg pt-4">Payment</h2>
-              <div className="border border-dashed border-neutral-300 rounded-lg p-4 text-sm text-neutral-500">
-                Demo checkout — payment integration (e.g. Paystack / mobile
-                money) gets wired up here.
+              <div className="border border-neutral-200 rounded-lg p-4 flex items-center gap-3">
+                <span className="text-2xl">💳</span>
+                <div className="text-sm">
+                  <p className="font-bold">Paystack — secure payment</p>
+                  <p className="text-neutral-500 text-xs">
+                    Cards, bank transfer, USSD. You&apos;ll be redirected to
+                    Paystack to complete payment.
+                  </p>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-detta-navy text-white font-bold text-sm tracking-wide py-4 rounded-lg"
+                disabled={paying}
+                className="w-full bg-detta-navy text-white font-bold text-sm tracking-wide py-4 rounded-lg disabled:opacity-60"
               >
-                PLACE ORDER · {formatPrice(subtotal)}
+                {paying ? "STARTING PAYMENT..." : `PAY ${formatPrice(subtotal)}`}
               </button>
             </form>
 

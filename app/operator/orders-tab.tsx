@@ -14,6 +14,7 @@ type Order = {
   status?: string;
   total?: number;
   createdAt?: number;
+  paystackRef?: string;
   items?: { slug: string; qty: number; size: string }[];
 };
 
@@ -68,6 +69,38 @@ export default function OrdersTab() {
     }
   };
 
+  /** Re-check a pending order against Paystack (e.g. customer closed the tab). */
+  const verifyPayment = async (o: Order) => {
+    if (!o.paystackRef) {
+      toast({ title: "No Paystack reference on this order", variant: "info" });
+      return;
+    }
+    setBusy(o.id);
+    try {
+      const res = await fetch("/api/paystack/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: o.paystackRef }),
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || "Verify failed");
+      const status = j.success ? "confirmed" : "failed";
+      await updateOrderStatus(o.id, status);
+      setOrders((prev) =>
+        prev.map((x) => (x.id === o.id ? { ...x, status } : x))
+      );
+      toast({
+        title: j.success ? "Payment confirmed" : "Payment failed",
+        description: `#${o.id.slice(0, 8).toUpperCase()}`,
+        variant: j.success ? "success" : "error",
+      });
+    } catch {
+      toast({ title: "Verify failed", variant: "error" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (loading) {
     return <p className="animate-pulse text-neutral-500 text-sm">Loading orders...</p>;
   }
@@ -115,6 +148,15 @@ export default function OrdersTab() {
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
+                {(o.status === "pending" || !o.status) && o.paystackRef && (
+                  <button
+                    disabled={busy === o.id}
+                    onClick={() => verifyPayment(o)}
+                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white text-black disabled:opacity-50"
+                  >
+                    {busy === o.id ? "..." : "VERIFY PAYMENT"}
+                  </button>
+                )}
                 {STATUSES.map((s) => (
                   <button
                     key={s}
