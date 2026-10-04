@@ -11,15 +11,14 @@ import { getProductSync } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
-import { createOrder, setOrderPaystackRef, setOrderReminderEmailId } from "@/lib/admin";
+import { createOrder } from "@/lib/admin";
 import { DELIVERY_FEE_NGN } from "@/lib/products";
-import { onOrderCreated, schedulePaymentReminder } from "@/lib/email-triggers";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
 
 export default function CheckoutPage() {
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal } = useCart();
   const { products } = useProducts();
   const { user, profile, saveProfile, loading: authLoading } = useAuth();
   const toast = useToast();
@@ -81,29 +80,8 @@ export default function CheckoutPage() {
         total,
       });
 
-      // 2. Email: order received (payment still to come)
-      onOrderCreated({
-        email: emailValue,
-        name: nameValue.trim() || "there",
-        orderId,
-        items: orderItems,
-        total,
-      });
-
-      // 2b. Schedule the 5-min unpaid reminder (cancelled on payment)
-      const reminderId = await schedulePaymentReminder({
-        email: emailValue,
-        name: nameValue.trim() || "there",
-        orderId,
-        total,
-      });
-      if (reminderId) {
-        try {
-          await setOrderReminderEmailId(orderId, reminderId);
-        } catch {}
-      }
-
-      // 3. Initialize Paystack (server recomputes the total from live prices)
+      // 2. Initialize Paystack server-side: recomputes the total, stores
+      //    the ref, sends the order email + schedules the 5-min reminder.
       const res = await fetch("/api/paystack/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,10 +94,9 @@ export default function CheckoutPage() {
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || "Could not start payment");
 
-      // 4. Attach the reference, then hand off to Paystack
-      await setOrderPaystackRef(orderId, j.reference);
+      // 3. Hand off to Paystack. Cart is NOT cleared — only on confirmed
+      //    payment (callback page). Abandoned carts stay intact.
       sessionStorage.setItem("hdc_last_order", orderId);
-      clear();
       window.location.href = j.authorization_url;
     } catch (err) {
       toast({

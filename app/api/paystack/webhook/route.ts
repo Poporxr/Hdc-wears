@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/paystack";
-import { fsGet, fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
-import { sendServerEmail } from "@/lib/server-email";
-import { orderConfirmationEmail } from "@/lib/emails";
-import { formatPrice } from "@/lib/products";
-import { Resend } from "resend";
+import { verifyWebhookSignature, confirmPaidOrder } from "@/lib/paystack";
+import { hasServerAccess } from "@/lib/firebase-admin";
 
 /**
  * POST /api/paystack/webhook
  *
  * Paystack calls this on payment events. Signature verified with HMAC
- * SHA512 against PAYSTACK_SECRET_KEY.
- *
- * - Without FIREBASE_SERVICE_ACCOUNT: acknowledges events; order state
- *   flows through /checkout/callback (client verify).
- * - With it: charge.success confirms the order server-side and fires the
- *   confirmation email (idempotent — only pending orders are touched).
+ * SHA512 against PAYSTACK_SECRET_KEY. On charge.success the order is
+ * confirmed server-side (idempotent — only pending orders are touched),
+ * the confirmation email fires, and the scheduled reminder is cancelled.
+ * Requires FIREBASE_SERVICE_ACCOUNT. Fails closed when missing.
  */
 export async function POST(req: NextRequest) {
   let raw: string;
@@ -34,6 +28,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
+  if (!(await hasServerAccess())) {
+    return NextResponse.json(
+      { error: "Server not configured (FIREBASE_SERVICE_ACCOUNT)" },
+      { status: 500 }
+    );
+  }
+
   const event = JSON.parse(raw) as {
     event: string;
     data?: {
@@ -41,58 +42,21 @@ export async function POST(req: NextRequest) {
       status?: string;
       amount?: number;
       paid_at?: string;
-      customer?: { email?: string };
       metadata?: { orderId?: string };
     };
   };
 
   if (event.event === "charge.success") {
     const orderId = event.data?.metadata?.orderId;
-    if ((await hasServerAccess()) && orderId) {
+    if (orderId) {
       try {
-        const doc = await fsGet("orders", orderId);
-        const o = doc?.data as
-          | {
-              status?: string;
-              email?: string;
-              name?: string;
-              items?: { name: string; qty: number; price: number }[];
-              total?: number;
-              reminderEmailId?: string;
-            }
-          | undefined;
-        // Idempotent: only pending orders get confirmed here.
-        if (o && o.status === "pending") {
-          await fsUpdate("orders", orderId, {
-            status: "confirmed",
-            paidAt: event.data?.paid_at || new Date().toISOString(),
-          });
-          // Cancel the scheduled 5-min reminder — they paid.
-          if (o.reminderEmailId) {
-            try {
-              const resend = new Resend(process.env.RESEND_API_KEY!);
-              await resend.emails.cancel(o.reminderEmailId);
-            } catch {}
-          }
-          if (o.email) {
-            const e = orderConfirmationEmail({
-              name: o.name || "there",
-              orderId,
-              items: (o.items || []).map((i) => ({
-                name: i.name,
-                qty: i.qty,
-                price: formatPrice(i.price * i.qty),
-              })),
-              total: formatPrice(o.total || 0),
-            });
-            await sendServerEmail({ to: o.email, subject: e.subject, html: e.html });
-          }
-        }
+        await confirmPaidOrder(orderId, {
+          amountNgn: (event.data?.amount || 0) / 100,
+          paidAt: event.data?.paid_at,
+        });
       } catch {
         // Acknowledge anyway; callback/operator can reconcile.
       }
-    } else {
-      console.log(`[paystack] charge.success ${event.data?.reference} (no service account)`);
     }
   }
 

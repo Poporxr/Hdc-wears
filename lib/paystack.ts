@@ -115,3 +115,89 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
     .digest("hex");
   return hash === signature;
 }
+
+/**
+ * Idempotent server-side order confirmation. Shared by /api/paystack/verify
+ * and /api/paystack/webhook. Only pending orders are ever touched.
+ * Requires FIREBASE_SERVICE_ACCOUNT (throws otherwise — no silent fallback).
+ */
+export async function confirmPaidOrder(
+  orderId: string,
+  opts: { amountNgn: number; paidAt?: string }
+): Promise<{ confirmed: boolean; already?: boolean; reason?: string }> {
+  const { fsGet, fsUpdate } = await import("./firebase-admin");
+  const { sendServerEmail } = await import("./server-email");
+  const { orderConfirmationEmail } = await import("./emails");
+  const { formatPrice } = await import("./products");
+  const { Resend } = await import("resend");
+
+  const doc = await fsGet("orders", orderId);
+  if (!doc) return { confirmed: false, reason: "Order not found" };
+  const o = doc.data as {
+    status?: string;
+    email?: string;
+    name?: string;
+    items?: { name: string; qty: number; price: number }[];
+    total?: number;
+    expiresAt?: number;
+    reminderEmailId?: string;
+  };
+
+  if (o.status === "confirmed") return { confirmed: true, already: true };
+  if (o.status !== "pending")
+    return { confirmed: false, reason: `Order is ${o.status}` };
+
+  if (o.expiresAt && Date.now() > o.expiresAt) {
+    await fsUpdate("orders", orderId, { status: "failed" });
+    return { confirmed: false, reason: "Order expired before payment" };
+  }
+
+  if (
+    o.total !== undefined &&
+    Math.round(opts.amountNgn) !== Math.round(o.total)
+  ) {
+    await fsUpdate("orders", orderId, { status: "failed" });
+    return { confirmed: false, reason: "Paid amount did not match order total" };
+  }
+
+  await fsUpdate("orders", orderId, {
+    status: "confirmed",
+    paidAt: opts.paidAt || new Date().toISOString(),
+  });
+
+  // Cancel the scheduled 5-min reminder — they paid.
+  if (o.reminderEmailId && process.env.RESEND_API_KEY) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.cancel(o.reminderEmailId);
+    } catch {}
+  }
+
+  // Confirmation email.
+  if (o.email) {
+    try {
+      const e = orderConfirmationEmail({
+        name: o.name || "there",
+        orderId,
+        items: (o.items || []).map((i) => ({
+          name: i.name,
+          qty: i.qty,
+          price: formatPrice(i.price * i.qty),
+        })),
+        total: formatPrice(o.total || 0),
+      });
+      await sendServerEmail({ to: o.email, subject: e.subject, html: e.html });
+    } catch {}
+  }
+
+  return { confirmed: true };
+}
+
+/** Mark a pending order failed server-side (payment failed / expired). */
+export async function failOrder(orderId: string) {
+  const { fsGet, fsUpdate } = await import("./firebase-admin");
+  const doc = await fsGet("orders", orderId);
+  if (doc && doc.data.status === "pending") {
+    await fsUpdate("orders", orderId, { status: "failed" });
+  }
+}

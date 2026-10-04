@@ -103,31 +103,3 @@ export async function createOrder(data: {
   });
   return ref.id;
 }
-
-/** Customer: attach the Paystack reference to their own pending order. */
-export async function setOrderPaystackRef(orderId: string, paystackRef: string) {
-  if (!db) throw new Error("Firebase not configured");
-  const { updateDoc } = await import("firebase/firestore");
-  await updateDoc(doc(db, "orders", orderId), { paystackRef });
-}
-
-/** Customer: mark their own pending order confirmed/failed after verification. */
-export async function confirmOrder(
-  orderId: string,
-  status: "confirmed" | "failed",
-  paidAt?: string
-) {
-  if (!db) throw new Error("Firebase not configured");
-  const { updateDoc } = await import("firebase/firestore");
-  await updateDoc(doc(db, "orders", orderId), {
-    status,
-    ...(paidAt ? { paidAt } : {}),
-  });
-}
-
-/** Customer: store the scheduled reminder email id on their pending order. */
-export async function setOrderReminderEmailId(orderId: string, emailId: string) {
-  if (!db) throw new Error("Firebase not configured");
-  const { updateDoc } = await import("firebase/firestore");
-  await updateDoc(doc(db, "orders", orderId), { reminderEmailId: emailId });
-}

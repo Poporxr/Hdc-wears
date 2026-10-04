@@ -5,50 +5,19 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
-import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/toast";
-import { confirmOrder } from "@/lib/admin";
-import { cancelScheduledEmail } from "@/lib/email-triggers";
+import { useCart } from "@/lib/store";
 import { formatPrice } from "@/lib/products";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 type State =
   | { kind: "verifying" }
-  | { kind: "success"; orderId: string; total: number; name: string }
+  | { kind: "success"; orderId: string; total: number }
   | { kind: "failed"; reason: string };
-
-async function sendConfirmation(opts: {
-  email: string;
-  name: string;
-  orderId: string;
-  items: { name: string; qty: number; price: number }[];
-  total: number;
-}) {
-  await fetch("/api/email/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "order_confirmation",
-      to: opts.email,
-      data: {
-        name: opts.name,
-        orderId: opts.orderId,
-        items: opts.items.map((i) => ({
-          name: i.name,
-          qty: i.qty,
-          price: formatPrice(i.price * i.qty),
-        })),
-        total: formatPrice(opts.total),
-      },
-    }),
-  });
-}
 
 function CallbackInner() {
   const params = useSearchParams();
-  const { user } = useAuth();
   const toast = useToast();
+  const { clear } = useCart();
   const [state, setState] = useState<State>({ kind: "verifying" });
   const ran = useRef(false);
 
@@ -57,15 +26,15 @@ function CallbackInner() {
     ran.current = true;
 
     const run = async () => {
-      const reference =
-        params.get("reference") || params.get("trxref") || "";
+      const reference = params.get("reference") || params.get("trxref") || "";
       if (!reference) {
         setState({ kind: "failed", reason: "No payment reference found." });
         return;
       }
 
       try {
-        // 1. Verify with Paystack (server-side)
+        // Server verifies with Paystack and confirms the order.
+        // This page only renders the result — it writes nothing.
         const res = await fetch("/api/paystack/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -74,91 +43,21 @@ function CallbackInner() {
         const j = await res.json();
         if (!j.ok) throw new Error(j.error || "Verification failed");
 
-        const orderId: string =
-          j.orderId || sessionStorage.getItem("hdc_last_order") || "";
-        if (!orderId || !db) throw new Error("Order not found");
-
-        // 2. Load the order to check expiry, amount, and current status
-        const snap = await getDoc(doc(db, "orders", orderId));
-        const o = snap.data() as {
-          email?: string;
-          name?: string;
-          items?: { name: string; qty: number; price: number }[];
-          total?: number;
-          status?: string;
-          expiresAt?: number;
-          reminderEmailId?: string;
-        };
-        if (!o) throw new Error("Order not found");
-
-        // Cancel the scheduled 5-min reminder — payment resolved either way.
-        if (o.reminderEmailId) {
-          cancelScheduledEmail(o.reminderEmailId);
-        }
-
-        // Already handled (e.g. page refreshed) — show success, no duplicate email
-        if (o.status === "confirmed") {
-          sessionStorage.removeItem("hdc_last_order");
-          setState({ kind: "success", orderId, total: o.total || j.amountNgn, name: "" });
-          return;
-        }
-
-        // Expired unpaid order
-        if (o.expiresAt && Date.now() > o.expiresAt && o.status === "pending") {
-          try {
-            await confirmOrder(orderId, "failed");
-          } catch {}
-          setState({
-            kind: "failed",
-            reason: "This order expired before payment completed. Please check out again.",
-          });
-          return;
-        }
-
-        // Amount must match what the order says
-        if (o.total !== undefined && Math.round(j.amountNgn) !== Math.round(o.total)) {
-          try {
-            await confirmOrder(orderId, "failed");
-          } catch {}
-          setState({
-            kind: "failed",
-            reason: "Paid amount did not match the order total. Contact us if you were charged.",
-          });
-          return;
-        }
-
         if (j.success) {
-          // 3. Mark the order confirmed (owner updating own pending order)
-          await confirmOrder(orderId, "confirmed", j.paidAt);
+          clear();
           sessionStorage.removeItem("hdc_last_order");
-
-          // 4. Fire the confirmation email (once)
-          try {
-            if (o.email) {
-              await sendConfirmation({
-                email: o.email,
-                name: o.name || "there",
-                orderId,
-                items: o.items || [],
-                total: o.total || j.amountNgn,
-              });
-            }
-          } catch {}
-
           toast({ title: "Payment successful", variant: "success" });
           setState({
             kind: "success",
-            orderId,
-            total: j.amountNgn,
-            name: user?.displayName || "",
+            orderId: j.orderId || "",
+            total: j.amountNgn || 0,
           });
         } else {
-          try {
-            await confirmOrder(orderId, "failed");
-          } catch {}
           setState({
             kind: "failed",
-            reason: "The payment was not completed.",
+            reason:
+              j.reason ||
+              "The payment was not completed. Your cart is intact — try again.",
           });
         }
       } catch (err) {
@@ -197,7 +96,9 @@ function CallbackInner() {
               PAYMENT CONFIRMED
             </h1>
             <p className="text-neutral-500 text-sm mt-3">
-              Order #{state.orderId.slice(0, 8).toUpperCase()} ·{" "}
+              {state.orderId && (
+                <>Order #{state.orderId.slice(0, 8).toUpperCase()} · </>
+              )}
               {formatPrice(state.total)}
               <br />A confirmation email is on its way.
             </p>

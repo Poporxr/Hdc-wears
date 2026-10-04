@@ -5,21 +5,40 @@ import {
   type CartItemInput,
 } from "@/lib/paystack";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
+import { sendServerEmail } from "@/lib/server-email";
+import { orderCreatedEmail, paymentReminderEmail } from "@/lib/emails";
+import { formatPrice } from "@/lib/products";
+import { Resend } from "resend";
 
 /**
  * POST /api/paystack/initialize
  * Body: { orderId, email, items: [{slug, qty, size}] }
  *
- * The client creates the order doc first (status: pending). Here we
- * recompute the total from live Firestore prices so the charged amount
- * can never be tampered with client-side, then initialize the Paystack
- * transaction and return the authorization URL.
+ * The client creates the order doc first (status: pending, create-only).
+ * Here we:
+ *  1. Recompute the total from live Firestore prices (tamper-proof).
+ *  2. Initialize the Paystack transaction (unique ref per order+attempt).
+ *  3. Store the Paystack ref on the order (server-side, via service account).
+ *  4. Send the "order received" email immediately.
+ *  5. Schedule the 5-min "payment not confirmed" reminder (cancellable).
+ *
+ * Requires PAYSTACK_SECRET_KEY + FIREBASE_SERVICE_ACCOUNT. Fails closed
+ * when either is missing — no insecure fallback.
  */
 export async function POST(req: NextRequest) {
   const rl = rateLimit(`paystack-init:${clientIp(req)}`, 10, 60 * 1000);
   if (!rl.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
+
+  if (!(await hasServerAccess())) {
+    return NextResponse.json(
+      { error: "Server not configured (FIREBASE_SERVICE_ACCOUNT)" },
+      { status: 500 }
+    );
+  }
+
   try {
     const { orderId, email, items } = (await req.json()) as {
       orderId?: string;
@@ -35,12 +54,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Server-side total from live prices — the source of truth.
-    // The reference is unique per order AND per attempt: hdc_<orderId>_<timestamp>
     const { itemsTotal, deliveryFee, total } = await computeTotal(items);
     if (total <= 0) {
       return NextResponse.json({ error: "Invalid order total" }, { status: 400 });
     }
 
+    // Unique per order AND per attempt.
     const reference = `hdc_${orderId}_${Date.now()}`;
     const data = await initializeTransaction({
       email,
@@ -48,6 +67,58 @@ export async function POST(req: NextRequest) {
       reference,
       metadata: { orderId, source: "hdc-wears" },
     });
+
+    // Store the Paystack ref server-side.
+    await fsUpdate("orders", orderId, { paystackRef: data.reference });
+
+    const from =
+      process.env.RESEND_FROM_EMAIL || "HDC Wears <onboarding@resend.dev>";
+
+    // Order-received email (immediate), with real order details.
+    let customerName = "there";
+    let orderItems: { name: string; qty: number; price: number }[] = [];
+    try {
+      const { fsGet } = await import("@/lib/firebase-admin");
+      const doc = await fsGet("orders", orderId);
+      const o = doc?.data as
+        | { name?: string; items?: { name: string; qty: number; price: number }[] }
+        | undefined;
+      customerName = o?.name || "there";
+      orderItems = o?.items || [];
+      const e = orderCreatedEmail({
+        name: customerName,
+        orderId,
+        items: orderItems.map((i) => ({
+          name: i.name,
+          qty: i.qty,
+          price: formatPrice(i.price * i.qty),
+        })),
+        total: formatPrice(total),
+      });
+      await sendServerEmail({ to: email, subject: e.subject, html: e.html });
+    } catch {}
+
+    // 5-min reminder (scheduled, cancellable on payment).
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY!);
+      const reminder = paymentReminderEmail({
+        name: customerName,
+        orderId,
+        total: formatPrice(total),
+      });
+      const scheduled = await resend.emails.send({
+        from,
+        to: email,
+        subject: reminder.subject,
+        html: reminder.html,
+        scheduledAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      });
+      if (scheduled.data?.id) {
+        await fsUpdate("orders", orderId, {
+          reminderEmailId: scheduled.data.id,
+        });
+      }
+    } catch {}
 
     return NextResponse.json({
       ok: true,

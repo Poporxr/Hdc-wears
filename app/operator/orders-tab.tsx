@@ -77,7 +77,8 @@ export default function OrdersTab() {
     }
   };
 
-  /** Re-check a pending order against Paystack (e.g. customer closed the tab). */
+  /** Re-check a pending order against Paystack (e.g. customer closed the tab).
+   *  Server confirms + emails when Paystack reports success. */
   const verifyPayment = async (o: Order) => {
     if (!o.paystackRef) {
       toast({ title: "No Paystack reference on this order", variant: "info" });
@@ -93,18 +94,9 @@ export default function OrdersTab() {
       const j = await res.json();
       if (!j.ok) throw new Error(j.error || "Verify failed");
       const status = j.success ? "confirmed" : "failed";
-      await updateOrderStatus(o.id, status);
       setOrders((prev) =>
         prev.map((x) => (x.id === o.id ? { ...x, status } : x))
       );
-      if (o.email) {
-        await onOrderStatusChange({
-          email: o.email,
-          name: o.name || "there",
-          orderId: o.id,
-          status,
-        });
-      }
       toast({
         title: j.success ? "Payment confirmed" : "Payment failed",
         description: `#${o.id.slice(0, 8).toUpperCase()}`,
