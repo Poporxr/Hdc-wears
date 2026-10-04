@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email not configured" }, { status: 500 });
   }
 
-  const { type, to, data } = await req.json();
+  const { type, to, data, scheduledAt } = await req.json();
   const from =
     process.env.RESEND_FROM_EMAIL || "HDC Wears <onboarding@resend.dev>";
 
@@ -102,6 +102,27 @@ export async function POST(req: NextRequest) {
 
   const resend = new Resend(apiKey);
   try {
+    // Scheduled send (single recipient): Resend holds the email until
+    // scheduledAt, and it can be cancelled via /api/email/cancel.
+    if (scheduledAt) {
+      const email = Array.isArray(to) ? to[0] : to;
+      if (!email) {
+        return NextResponse.json({ error: "No recipient" }, { status: 400 });
+      }
+      const result = await resend.emails.send({
+        from,
+        to: email,
+        subject,
+        html,
+        scheduledAt,
+      });
+      return NextResponse.json({
+        ok: true,
+        id: result.data?.id,
+        scheduled: true,
+      });
+    }
+
     // One email per recipient so nobody ever sees the other addresses.
     const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
     if (recipients.length === 0) {

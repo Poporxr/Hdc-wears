@@ -4,6 +4,7 @@ import { fsGet, fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
 import { sendServerEmail } from "@/lib/server-email";
 import { orderConfirmationEmail } from "@/lib/emails";
 import { formatPrice } from "@/lib/products";
+import { Resend } from "resend";
 
 /**
  * POST /api/paystack/webhook
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
               name?: string;
               items?: { name: string; qty: number; price: number }[];
               total?: number;
+              reminderEmailId?: string;
             }
           | undefined;
         // Idempotent: only pending orders get confirmed here.
@@ -65,6 +67,13 @@ export async function POST(req: NextRequest) {
             status: "confirmed",
             paidAt: event.data?.paid_at || new Date().toISOString(),
           });
+          // Cancel the scheduled 5-min reminder — they paid.
+          if (o.reminderEmailId) {
+            try {
+              const resend = new Resend(process.env.RESEND_API_KEY!);
+              await resend.emails.cancel(o.reminderEmailId);
+            } catch {}
+          }
           if (o.email) {
             const e = orderConfirmationEmail({
               name: o.name || "there",

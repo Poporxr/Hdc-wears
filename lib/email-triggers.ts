@@ -109,3 +109,44 @@ export async function onOrderCreated(opts: {
     });
   } catch {}
 }
+
+/** Schedule the 5-min "payment not confirmed" reminder via Resend. Returns the email id. */
+export async function schedulePaymentReminder(opts: {
+  email: string;
+  name: string;
+  orderId: string;
+  total: number;
+}): Promise<string | null> {
+  const { formatPrice } = await import("./products");
+  try {
+    const res = await fetch("/api/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "payment_reminder",
+        to: opts.email,
+        scheduledAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        data: {
+          name: opts.name,
+          orderId: opts.orderId,
+          total: formatPrice(opts.total),
+        },
+      }),
+    });
+    const j = await res.json();
+    return j.ok && j.id ? j.id : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Cancel a scheduled email (e.g. reminder once paid). */
+export async function cancelScheduledEmail(emailId: string) {
+  try {
+    await fetch("/api/email/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: emailId }),
+    });
+  } catch {}
+}

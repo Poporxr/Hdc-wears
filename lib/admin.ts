@@ -124,3 +124,10 @@ export async function confirmOrder(
     ...(paidAt ? { paidAt } : {}),
   });
 }
+
+/** Customer: store the scheduled reminder email id on their pending order. */
+export async function setOrderReminderEmailId(orderId: string, emailId: string) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc } = await import("firebase/firestore");
+  await updateDoc(doc(db, "orders", orderId), { reminderEmailId: emailId });
+}

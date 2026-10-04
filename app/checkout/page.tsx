@@ -11,9 +11,9 @@ import { getProductSync } from "@/lib/db";
 import { useProducts } from "@/lib/use-products";
 import { useCart } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
-import { createOrder, setOrderPaystackRef } from "@/lib/admin";
+import { createOrder, setOrderPaystackRef, setOrderReminderEmailId } from "@/lib/admin";
 import { DELIVERY_FEE_NGN } from "@/lib/products";
-import { onOrderCreated } from "@/lib/email-triggers";
+import { onOrderCreated, schedulePaymentReminder } from "@/lib/email-triggers";
 
 const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
@@ -89,6 +89,19 @@ export default function CheckoutPage() {
         items: orderItems,
         total,
       });
+
+      // 2b. Schedule the 5-min unpaid reminder (cancelled on payment)
+      const reminderId = await schedulePaymentReminder({
+        email: emailValue,
+        name: nameValue.trim() || "there",
+        orderId,
+        total,
+      });
+      if (reminderId) {
+        try {
+          await setOrderReminderEmailId(orderId, reminderId);
+        } catch {}
+      }
 
       // 3. Initialize Paystack (server recomputes the total from live prices)
       const res = await fetch("/api/paystack/initialize", {

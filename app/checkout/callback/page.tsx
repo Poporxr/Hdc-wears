@@ -8,6 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/toast";
 import { confirmOrder } from "@/lib/admin";
+import { cancelScheduledEmail } from "@/lib/email-triggers";
 import { formatPrice } from "@/lib/products";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -86,8 +87,14 @@ function CallbackInner() {
           total?: number;
           status?: string;
           expiresAt?: number;
+          reminderEmailId?: string;
         };
         if (!o) throw new Error("Order not found");
+
+        // Cancel the scheduled 5-min reminder — payment resolved either way.
+        if (o.reminderEmailId) {
+          cancelScheduledEmail(o.reminderEmailId);
+        }
 
         // Already handled (e.g. page refreshed) — show success, no duplicate email
         if (o.status === "confirmed") {
