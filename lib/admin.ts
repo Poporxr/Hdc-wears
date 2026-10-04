@@ -197,13 +197,19 @@ export async function getOrder(
   return { id: snap.id, ...(snap.data() as Record<string, unknown>) };
 }
 
-/** Admin: manually mark an order as paid (bank transfer / manual verification). */
-export async function markOrderPaid(orderId: string) {
+/** Admin: manually mark an order as paid (bank transfer / manual verification).
+ *  Returns true only if the order actually transitioned from unpaid — so the
+ *  confirmation email is never sent twice. */
+export async function markOrderPaid(orderId: string): Promise<boolean> {
   if (!db) throw new Error("Firebase not configured");
+  const current = await getOrder(orderId);
+  if (!current) throw new Error("Order not found");
+  if (current.paymentStatus === "paid") return false;
   const { updateDoc, doc: docRef } = await import("firebase/firestore");
   await updateDoc(docRef(db, "orders", orderId), {
     paymentStatus: "paid",
     status: "confirmed",
     paidAt: new Date().toISOString(),
   });
+  return true;
 }

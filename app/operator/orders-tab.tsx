@@ -160,7 +160,12 @@ function OrderModal({
     setBusy(true);
     setError(null);
     try {
-      await markOrderPaid(o.id);
+      const transitioned = await markOrderPaid(o.id);
+      if (!transitioned) {
+        patch({ paymentStatus: "paid" });
+        toast({ title: "Already marked as paid — no duplicate email sent", variant: "info" });
+        return;
+      }
       patch({ paymentStatus: "paid", status: "confirmed" });
       if (o.email) {
         await onOrderPaidManually({
