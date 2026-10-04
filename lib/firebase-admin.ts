@@ -203,3 +203,26 @@ export async function fsQuery(opts: {
   }
   return out;
 }
+
+/** Create a document with an auto id. Returns the id. */
+export async function fsAdd(
+  collection: string,
+  fields: Record<string, string | number | boolean | null>
+): Promise<string> {
+  const token = await getAccessToken();
+  if (!token) throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
+  const res = await fetch(`${FIRESTORE_BASE}/${collection}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ fields: toFsFields(fields) }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Firestore error ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const j = await res.json();
+  return j.name.split("/").pop() as string;
+}

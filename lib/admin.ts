@@ -103,10 +103,48 @@ export async function createOrder(data: {
   if (!db) throw new Error("Firebase not configured");
   const ref = await addDoc(collection(db, "orders"), {
     ...data,
-    status: "pending",
+    status: "pending", // fulfillment: pending → confirmed → shipped → delivered / cancelled
+    paymentStatus: "unpaid", // payment: unpaid → paid / failed / refunded
     paystackRef: null,
     createdAt: Date.now(),
     expiresAt: Date.now() + ORDER_EXPIRY_MS, // 30 min to pay
   });
   return ref.id;
+}
+
+/** Customer: list their own orders (newest first). */
+export async function listMyOrders(
+  uid: string
+): Promise<{ id: string; createdAt?: number; [k: string]: unknown }[]> {
+  if (!db) return [];
+  const { query, where, getDocs } = await import("firebase/firestore");
+  const snap = await getDocs(
+    query(collection(db, "orders"), where("userId", "==", uid))
+  );
+  const list: { id: string; createdAt?: number; [k: string]: unknown }[] =
+    snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Record<string, unknown>),
+    }));
+  return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+/** Admin: list all deliveries (newest first). */
+export async function listDeliveries() {
+  if (!db) return [];
+  const { getDocs, collection: col } = await import("firebase/firestore");
+  const snap = await getDocs(col(db, "deliveries"));
+  const list: { id: string; createdAt?: number; [k: string]: unknown }[] =
+    snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Record<string, unknown>),
+    }));
+  return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+/** Admin: update a delivery's status. */
+export async function updateDeliveryStatus(deliveryId: string, status: string) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc, doc: docRef } = await import("firebase/firestore");
+  await updateDoc(docRef(db, "deliveries", deliveryId), { status });
 }

@@ -71,6 +71,40 @@ export async function POST(req: NextRequest) {
     // Store the Paystack ref server-side.
     await fsUpdate("orders", orderId, { paystackRef: data.reference });
 
+    // Create the delivery record in its own collection.
+    try {
+      const { fsGet, fsAdd } = await import("@/lib/firebase-admin");
+      const orderDoc = await fsGet("orders", orderId);
+      const od = orderDoc?.data as
+        | {
+            userId?: string;
+            name?: string;
+            email?: string;
+            phone?: string;
+            address?: string;
+            city?: string;
+            state?: string;
+            deliveryFee?: number;
+          }
+        | undefined;
+      if (od) {
+        const deliveryId = await fsAdd("deliveries", {
+          orderId,
+          userId: od.userId || "",
+          name: od.name || "",
+          email: od.email || email,
+          phone: od.phone || "",
+          address: od.address || "",
+          city: od.city || "",
+          state: od.state || "",
+          fee: od.deliveryFee ?? deliveryFee,
+          status: "pending",
+          createdAt: Date.now(),
+        });
+        await fsUpdate("orders", orderId, { deliveryId });
+      }
+    } catch {}
+
     const from =
       process.env.RESEND_FROM_EMAIL || "HDC Wears <onboarding@resend.dev>";
 

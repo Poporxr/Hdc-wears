@@ -148,7 +148,10 @@ export async function confirmPaidOrder(
     return { confirmed: false, reason: `Order is ${o.status}` };
 
   if (o.expiresAt && Date.now() > o.expiresAt) {
-    await fsUpdate("orders", orderId, { status: "failed" });
+    await fsUpdate("orders", orderId, {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
     return { confirmed: false, reason: "Order expired before payment" };
   }
 
@@ -156,12 +159,16 @@ export async function confirmPaidOrder(
     o.total !== undefined &&
     Math.round(opts.amountNgn) !== Math.round(o.total)
   ) {
-    await fsUpdate("orders", orderId, { status: "failed" });
+    await fsUpdate("orders", orderId, {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
     return { confirmed: false, reason: "Paid amount did not match order total" };
   }
 
   await fsUpdate("orders", orderId, {
     status: "confirmed",
+    paymentStatus: "paid",
     paidAt: opts.paidAt || new Date().toISOString(),
   });
 
@@ -198,6 +205,9 @@ export async function failOrder(orderId: string) {
   const { fsGet, fsUpdate } = await import("./firebase-admin");
   const doc = await fsGet("orders", orderId);
   if (doc && doc.data.status === "pending") {
-    await fsUpdate("orders", orderId, { status: "failed" });
+    await fsUpdate("orders", orderId, {
+      status: "cancelled",
+      paymentStatus: "failed",
+    });
   }
 }

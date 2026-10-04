@@ -17,7 +17,7 @@ export type Product = {
 export const CURRENCY = "₦";
 
 /** Flat delivery fee in NGN, added to every order. */
-export const DELIVERY_FEE_NGN = 3000;
+export const DELIVERY_FEE_NGN = 5000;
 
 /** Unpaid orders expire after this long (ms). */
 export const ORDER_EXPIRY_MS = 30 * 60 * 1000;

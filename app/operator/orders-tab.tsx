@@ -12,6 +12,7 @@ type Order = {
   email?: string;
   name?: string;
   status?: string;
+  paymentStatus?: string;
   total?: number;
   itemsTotal?: number;
   deliveryFee?: number;
@@ -19,6 +20,13 @@ type Order = {
   expiresAt?: number;
   paystackRef?: string;
   items?: { slug: string; qty: number; size: string }[];
+};
+
+const PAYMENT_COLORS: Record<string, string> = {
+  unpaid: "bg-yellow-900/40 text-yellow-400",
+  paid: "bg-green-900/40 text-green-400",
+  failed: "bg-red-900/40 text-red-400",
+  refunded: "bg-neutral-700 text-neutral-300",
 };
 
 const isExpired = (o: Order) =>
@@ -147,15 +155,24 @@ export default function OrdersTab() {
                     </p>
                   )}
                 </div>
-                <span
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-                    isExpired(o)
-                      ? "bg-neutral-800 text-neutral-400"
-                      : STATUS_COLORS[o.status || "pending"]
-                  }`}
-                >
-                  {isExpired(o) ? "EXPIRED" : (o.status || "pending").toUpperCase()}
-                </span>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                      isExpired(o)
+                        ? "bg-neutral-800 text-neutral-400"
+                        : STATUS_COLORS[o.status || "pending"]
+                    }`}
+                  >
+                    {isExpired(o) ? "EXPIRED" : (o.status || "pending").toUpperCase()}
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                      PAYMENT_COLORS[o.paymentStatus || "unpaid"]
+                    }`}
+                  >
+                    {(o.paymentStatus || "unpaid").toUpperCase()}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {(o.status === "pending" || !o.status) && o.paystackRef && (

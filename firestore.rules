@@ -53,10 +53,18 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid &&
-        request.resource.data.status == "pending";
+        request.resource.data.status == "pending" &&
+        request.resource.data.paymentStatus == "unpaid";
       allow read: if isSignedIn() &&
         (resource.data.userId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    // Deliveries — server-created per order; owners read their own, admins manage.
+    match /deliveries/{id} {
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
     }
 
     // Custom design requests — signed-in users can file; admins triage.
