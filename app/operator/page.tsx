@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { fetchProducts, fetchGallery } from "@/lib/db";
 import { listOrders, listCustomers } from "@/lib/admin";
 import { formatPrice } from "@/lib/products";
-import { StatCard } from "./ui";
+import { StatCard, Bars, Donut, SectionLabel } from "./ui";
 import ProductsTab from "./products-tab";
 import OrdersTab from "./orders-tab";
 import DeliveriesTab from "./deliveries-tab";
@@ -24,19 +24,35 @@ const TABS = [
   { id: "emails", label: "Emails", icon: "✉" },
 ] as const;
 
+type OrderRow = {
+  id: string;
+  name?: string;
+  total?: number;
+  paymentStatus?: string;
+  status?: string;
+  createdAt?: number;
+};
+
 type Stats = {
   products: number;
   outOfStock: number;
   orders: number;
   revenue: number;
-  unpaid: number;
   paidOrders: number;
+  unpaidCount: number;
+  unpaidValue: number;
+  failedCount: number;
   customers: number;
+  aov: number;
 };
 
 function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
-  const [recent, setRecent] = useState<{ id: string; name?: string; total?: number; paymentStatus?: string }[]>([]);
+  const [recent, setRecent] = useState<OrderRow[]>([]);
+  const [revSeries, setRevSeries] = useState<{ label: string; value: number }[]>([]);
+  const [payMix, setPayMix] = useState<
+    { label: string; value: number; color: string }[]
+  >([]);
 
   useEffect(() => {
     Promise.all([
@@ -44,20 +60,50 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
       listOrders().catch(() => []),
       listCustomers().catch(() => []),
     ]).then(([products, orders, customers]) => {
-      const os = orders as { total?: number; paymentStatus?: string }[];
+      const os = orders as OrderRow[];
       const paid = os.filter((o) => o.paymentStatus === "paid");
+      const unpaid = os.filter((o) => (o.paymentStatus || "unpaid") === "unpaid");
+      const failed = os.filter((o) => o.paymentStatus === "failed");
       const revenue = paid.reduce((s, o) => s + (o.total || 0), 0);
+      const unpaidValue = unpaid.reduce((s, o) => s + (o.total || 0), 0);
+
       setStats({
         products: products.length,
         outOfStock: products.filter((p) => !p.inStock).length,
         orders: os.length,
         revenue,
-        unpaid: os.filter((o) => (o.paymentStatus || "unpaid") === "unpaid").length,
         paidOrders: paid.length,
+        unpaidCount: unpaid.length,
+        unpaidValue,
+        failedCount: failed.length,
         customers: customers.length,
+        aov: paid.length > 0 ? Math.round(revenue / paid.length) : 0,
       });
+
+      const days: { label: string; value: number }[] = [];
+      const now = new Date();
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const key = d.toDateString();
+        const val = paid
+          .filter((o) => o.createdAt && new Date(o.createdAt).toDateString() === key)
+          .reduce((s, o) => s + (o.total || 0), 0);
+        days.push({
+          label: d.toLocaleDateString("en-NG", { day: "numeric" }),
+          value: val,
+        });
+      }
+      setRevSeries(days);
+
+      setPayMix([
+        { label: "Paid", value: paid.length, color: "#4ade80" },
+        { label: "Unpaid", value: unpaid.length, color: "#facc15" },
+        { label: "Failed", value: failed.length, color: "#f87171" },
+      ]);
+
       setRecent(
-        (orders as { id: string; name?: string; total?: number; paymentStatus?: string; createdAt?: number }[])
+        [...os]
           .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
           .slice(0, 5)
       );
@@ -71,44 +117,56 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
   return (
     <div>
       <h2 className="text-xl font-black tracking-tight mb-5">OVERVIEW</h2>
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
         <StatCard
-          label="REVENUE"
+          label="NET REVENUE"
           value={formatPrice(stats.revenue)}
-          sub={`${stats.paidOrders} paid orders`}
-          accent="bg-green-500"
+          delta={`${stats.paidOrders} paid orders · AOV ${formatPrice(stats.aov)}`}
         />
         <StatCard
           label="AWAITING PAYMENT"
-          value={String(stats.unpaid)}
-          sub="unpaid orders"
-          accent="bg-yellow-500"
+          value={formatPrice(stats.unpaidValue)}
+          delta={`${stats.unpaidCount} unpaid orders at risk`}
           onClick={() => setTab("orders")}
         />
         <StatCard
           label="ORDERS"
           value={String(stats.orders)}
-          sub="all time"
+          delta={`${stats.failedCount} failed payments`}
           onClick={() => setTab("orders")}
         />
         <StatCard
           label="PRODUCTS"
           value={String(stats.products)}
-          sub={stats.outOfStock > 0 ? `${stats.outOfStock} out of stock` : "all in stock"}
-          accent={stats.outOfStock > 0 ? "bg-red-500" : undefined}
+          delta={
+            stats.outOfStock > 0
+              ? `${stats.outOfStock} out of stock — restock`
+              : "all in stock"
+          }
           onClick={() => setTab("products")}
         />
-        <StatCard
-          label="CUSTOMERS"
-          value={String(stats.customers)}
-          onClick={() => setTab("customers")}
-        />
+        <StatCard label="CUSTOMERS" value={String(stats.customers)} />
         <StatCard
           label="DELIVERIES"
-          value="→"
-          sub="manage fulfillment"
+          value="Manage →"
+          delta="track fulfillment"
           onClick={() => setTab("deliveries")}
         />
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-2.5 mt-2.5">
+        <div className="lg:col-span-3 bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+          <SectionLabel>REVENUE — LAST 14 DAYS</SectionLabel>
+          <Bars
+            data={revSeries}
+            formatY={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
+          />
+        </div>
+        <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+          <SectionLabel>PAYMENT MIX</SectionLabel>
+          <Donut segments={payMix} />
+        </div>
       </div>
 
       <h3 className="text-[11px] font-bold tracking-[0.2em] text-neutral-500 mt-8 mb-3">

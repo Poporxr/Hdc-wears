@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { listCustomers } from "@/lib/admin";
+import { Table, Td } from "./ui";
 
 type Customer = {
   uid: string;
@@ -28,7 +29,7 @@ export default function CustomersTab() {
 
   return (
     <div>
-      <h2 className="text-xl font-black tracking-tight mb-6">
+      <h2 className="text-xl font-black tracking-tight mb-5">
         CUSTOMERS ({customers.length})
       </h2>
       {customers.length === 0 ? (
@@ -38,22 +39,24 @@ export default function CustomersTab() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <Table head={["Customer", "Email", "Phone", "Joined"]}>
           {customers.map((c) => (
-            <div
-              key={c.uid}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex items-center justify-between"
-            >
-              <div>
-                <p className="font-bold text-sm">{c.name || "No name"}</p>
-                <p className="text-neutral-500 text-xs">{c.email}</p>
-              </div>
-              {c.phone && (
-                <p className="text-neutral-400 text-xs">{c.phone}</p>
-              )}
-            </div>
+            <tr key={c.uid} className="hover:bg-neutral-900/60 transition-colors">
+              <Td className="font-bold">{c.name || "No name"}</Td>
+              <Td className="text-neutral-400">{c.email}</Td>
+              <Td className="text-neutral-400">{c.phone || "—"}</Td>
+              <Td className="text-neutral-500">
+                {c.createdAt
+                  ? new Date(c.createdAt).toLocaleDateString("en-NG", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "—"}
+              </Td>
+            </tr>
           ))}
-        </div>
+        </Table>
       )}
     </div>
   );

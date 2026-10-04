@@ -9,6 +9,8 @@ import {
   Pill,
   Segmented,
   SectionLabel,
+  Table,
+  Td,
 } from "./ui";
 
 type Delivery = {
@@ -135,28 +137,27 @@ export default function DeliveriesTab() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <Table head={["Recipient", "Address", "Fee", "Status", ""]}>
           {deliveries.map((d) => (
-            <button
+            <tr
               key={d.id}
               onClick={() => setOpenId(d.id)}
-              className="w-full text-left bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3.5 hover:border-neutral-600 transition-colors"
+              className="hover:bg-neutral-900/60 cursor-pointer transition-colors"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-bold text-sm truncate">{d.name}</p>
-                  <p className="text-neutral-500 text-xs mt-0.5 truncate">
-                    {d.address}, {d.city} · {formatPrice(d.fee || 0)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {deliveryPill(d.status)}
-                  <span className="text-neutral-500 font-bold">→</span>
-                </div>
-              </div>
-            </button>
+              <Td>
+                <p className="font-bold">{d.name}</p>
+                <p className="text-xs text-neutral-500">{d.phone}</p>
+              </Td>
+              <Td className="text-neutral-400 whitespace-normal min-w-48">
+                {d.address}, {d.city}
+                {d.state ? `, ${d.state}` : ""}
+              </Td>
+              <Td className="font-bold">{formatPrice(d.fee || 0)}</Td>
+              <Td>{deliveryPill(d.status)}</Td>
+              <Td className="text-neutral-500 font-bold">→</Td>
+            </tr>
           ))}
-        </div>
+        </Table>
       )}
       {open && (
         <DeliveryModal

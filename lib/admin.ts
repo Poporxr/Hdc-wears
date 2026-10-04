@@ -79,9 +79,46 @@ export async function deleteProduct(slug: string) {
   await deleteDoc(doc(db, "products", slug));
 }
 
-/** Admin: update an order's status. */
+/**
+ * Order state machine (mirrors the old HDC admin):
+ * - Only PAID orders can move into fulfillment statuses.
+ * - Terminal states (delivered, cancelled, failed) can never move again.
+ * - A failed payment can never become confirmed/shipped/delivered.
+ */
+export const ORDER_FLOW: Record<string, string[]> = {
+  pending: ["pending", "cancelled"],
+  confirmed: ["confirmed", "shipped", "delivered", "cancelled"],
+  shipped: ["shipped", "delivered"],
+  delivered: ["delivered"],
+  cancelled: ["cancelled"],
+};
+
+export function allowedOrderStatuses(order: {
+  status?: string;
+  paymentStatus?: string;
+}): string[] {
+  const s = order.status || "pending";
+  const paid = order.paymentStatus === "paid";
+  if (!paid) {
+    // Unpaid: may only sit or be cancelled. Payment itself moves it to confirmed.
+    return s === "pending" ? ["pending", "cancelled"] : [s];
+  }
+  return ORDER_FLOW[s] || [s];
+}
+
+/** Admin: update an order's status (enforces the state machine). */
 export async function updateOrderStatus(orderId: string, status: string) {
   if (!db) throw new Error("Firebase not configured");
+  const current = await getOrder(orderId);
+  if (!current) throw new Error("Order not found");
+  const allowed = allowedOrderStatuses(
+    current as { status?: string; paymentStatus?: string }
+  );
+  if (!allowed.includes(status)) {
+    throw new Error(
+      `Cannot move order from ${(current.status as string) || "pending"} to ${status}.`
+    );
+  }
   const { updateDoc } = await import("firebase/firestore");
   await updateDoc(doc(db, "orders", orderId), { status });
 }

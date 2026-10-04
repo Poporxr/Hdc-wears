@@ -11,7 +11,7 @@ import {
 } from "@/lib/email-triggers";
 import { formatPrice, type Product } from "@/lib/products";
 import { useToast } from "@/components/toast";
-import { Modal, Switch, Pill, SectionLabel } from "./ui";
+import { Modal, Switch, Table, Td } from "./ui";
 
 const inputCls =
   "w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-white placeholder:text-neutral-500";
@@ -323,57 +323,63 @@ export default function ProductsTab() {
           + NEW PRODUCT
         </button>
       </div>
-      <div className="space-y-2">
+      <Table head={["Product", "Price", "Stock", ""]}>
         {products.map((p) => (
-          <div
-            key={p.slug}
-            className="bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 flex gap-4 items-center"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={
-                p.images[0]?.includes("cloudinary")
-                  ? p.images[0]
-                  : cl(`products/${p.color.toLowerCase()}-front`, "f_auto,q_auto,w_200")
-              }
-              alt={p.name}
-              className="w-14 h-16 object-cover rounded-lg bg-neutral-800 shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm truncate">{p.name}</p>
-              <p className="text-neutral-500 text-xs mt-0.5">
-                {formatPrice(p.price)} · {p.color}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="flex flex-col items-end gap-1">
+          <tr key={p.slug} className="hover:bg-neutral-900/60 transition-colors">
+            <Td>
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    p.images[0]?.includes("cloudinary")
+                      ? p.images[0]
+                      : cl(`products/${p.color.toLowerCase()}-front`, "f_auto,q_auto,w_200")
+                  }
+                  alt={p.name}
+                  className="w-11 h-14 object-cover rounded-lg bg-neutral-800 shrink-0"
+                />
+                <div>
+                  <p className="font-bold">{p.name}</p>
+                  <p className="text-xs text-neutral-500">
+                    {p.color} · {p.category}
+                  </p>
+                </div>
+              </div>
+            </Td>
+            <Td className="font-bold">{formatPrice(p.price)}</Td>
+            <Td>
+              <span className="flex items-center gap-2.5">
                 <Switch
                   on={p.inStock}
                   onToggle={() => toggleStock(p)}
                   disabled={busy}
                 />
-                <span className="text-[10px] font-bold text-neutral-500">
+                <span className="text-xs font-bold text-neutral-400">
                   {p.inStock ? "IN STOCK" : "OUT"}
                 </span>
+              </span>
+            </Td>
+            <Td>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditing(p)}
+                  className="text-[11px] font-bold px-3 py-2 rounded-lg bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                >
+                  EDIT
+                </button>
+                <button
+                  onClick={() => remove(p)}
+                  disabled={busy}
+                  aria-label={`Delete ${p.name}`}
+                  className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 font-bold hover:bg-red-900/50 disabled:opacity-50"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                onClick={() => setEditing(p)}
-                className="text-[11px] font-bold px-3 py-2 rounded-lg bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
-              >
-                EDIT
-              </button>
-              <button
-                onClick={() => remove(p)}
-                disabled={busy}
-                aria-label="Delete product"
-                className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 font-bold hover:bg-red-900/50"
-              >
-                ×
-              </button>
-            </div>
-          </div>
+            </Td>
+          </tr>
         ))}
-      </div>
+      </Table>
       {(showForm || editing) && (
         <ProductForm
           initial={editing || EMPTY}

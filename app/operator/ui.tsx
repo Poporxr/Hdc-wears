@@ -7,10 +7,12 @@ export function Modal({
   title,
   onClose,
   children,
+  wide,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  wide?: boolean;
 }) {
   useEffect(() => {
     const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -28,7 +30,9 @@ export function Modal({
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
         onClick={onClose}
       />
-      <div className="relative w-full md:max-w-lg bg-neutral-950 border border-neutral-800 rounded-t-3xl md:rounded-3xl max-h-[92vh] overflow-y-auto">
+      <div
+        className={`relative w-full ${wide ? "md:max-w-2xl" : "md:max-w-lg"} bg-neutral-950 border border-neutral-800 rounded-t-3xl md:rounded-3xl max-h-[92vh] overflow-y-auto`}
+      >
         <div className="sticky top-0 bg-neutral-950/95 backdrop-blur border-b border-neutral-800 px-5 py-4 flex items-center justify-between">
           <h3 className="font-black tracking-tight">{title}</h3>
           <button
@@ -63,7 +67,7 @@ export function Pill({
   };
   return (
     <span
-      className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full ${tones[tone]}`}
+      className={`inline-flex items-center whitespace-nowrap text-[11px] font-bold px-2.5 py-1 rounded-full ${tones[tone]}`}
     >
       {children}
     </span>
@@ -98,37 +102,77 @@ export function orderPill(status?: string) {
   return <Pill tone={tone as "green"}>{s}</Pill>;
 }
 
-/* ---------- Compact KPI card ---------- */
+/* ---------- KPI card (value + context, no side accents) ---------- */
 export function StatCard({
   label,
   value,
-  sub,
-  accent,
+  delta,
   onClick,
 }: {
   label: string;
   value: string;
-  sub?: string;
-  accent?: string;
+  delta?: string;
   onClick?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`relative overflow-hidden bg-neutral-900 border border-neutral-800 rounded-2xl p-4 text-left w-full ${
+      className={`bg-neutral-900 border border-neutral-800 rounded-2xl p-4 text-left w-full ${
         onClick ? "hover:border-neutral-600 cursor-pointer" : ""
       }`}
     >
-      {accent && (
-        <span className={`absolute left-0 top-0 bottom-0 w-1 ${accent}`} />
-      )}
       <p className="text-[10px] font-bold tracking-[0.18em] text-neutral-500">
         {label}
       </p>
       <p className="text-2xl font-black tracking-tight mt-1.5">{value}</p>
-      {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
+      {delta && <p className="text-xs text-neutral-500 mt-1">{delta}</p>}
     </button>
+  );
+}
+
+/* ---------- Data table ---------- */
+export function Table({
+  head,
+  children,
+}: {
+  head: string[];
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-neutral-800">
+      <table className="min-w-full border-collapse text-left">
+        <thead>
+          <tr className="bg-neutral-900">
+            {head.map((h) => (
+              <th
+                key={h}
+                className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500 whitespace-nowrap"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+export function Td({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <td
+      className={`px-4 py-3.5 text-sm border-t border-neutral-800/70 align-middle whitespace-nowrap ${className || ""}`}
+    >
+      {children}
+    </td>
   );
 }
 
@@ -228,5 +272,143 @@ export function ActionButton({
       <span>{children}</span>
       <span aria-hidden>→</span>
     </button>
+  );
+}
+
+/* ---------- Bar chart (div-based) ---------- */
+export function Bars({
+  data,
+  formatY,
+}: {
+  data: { label: string; value: number }[];
+  formatY?: (v: number) => string;
+}) {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  return (
+    <div>
+      <div className="flex items-end gap-1.5 h-36">
+        {data.map((d, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <span className="text-[10px] text-neutral-500">
+              {d.value > 0 ? (formatY ? formatY(d.value) : d.value) : ""}
+            </span>
+            <div
+              className={`w-full rounded-t-md ${d.value > 0 ? "bg-white" : "bg-neutral-800"}`}
+              style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
+              title={`${d.label}: ${d.value}`}
+            />
+            <span className="text-[10px] text-neutral-600">{d.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Donut chart ---------- */
+export function Donut({
+  segments,
+}: {
+  segments: { label: string; value: number; color: string }[];
+}) {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  let acc = 0;
+  const R = 54;
+  const C = 2 * Math.PI * R;
+  return (
+    <div className="flex items-center gap-5">
+      <svg width="130" height="130" viewBox="0 0 130 130" className="-rotate-90">
+        <circle cx="65" cy="65" r={R} fill="none" stroke="#262626" strokeWidth="16" />
+        {segments.map((s, i) => {
+          const frac = s.value / total;
+          const el = (
+            <circle
+              key={i}
+              cx="65"
+              cy="65"
+              r={R}
+              fill="none"
+              stroke={s.color}
+              strokeWidth="16"
+              strokeDasharray={`${frac * C} ${C}`}
+              strokeDashoffset={-acc * C}
+              strokeLinecap="butt"
+            />
+          );
+          acc += frac;
+          return el;
+        })}
+      </svg>
+      <div className="space-y-2">
+        {segments.map((s, i) => (
+          <div key={i} className="flex items-center gap-2 text-sm">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ background: s.color }}
+            />
+            <span className="text-neutral-400">{s.label}</span>
+            <span className="font-bold ml-auto pl-3">{s.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Pagination ---------- */
+export function Pagination({
+  page,
+  totalPages,
+  onPage,
+  label,
+}: {
+  page: number;
+  totalPages: number;
+  onPage: (p: number) => void;
+  label: string;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between mt-4">
+      <p className="text-xs text-neutral-500">
+        Page {page} of {totalPages} · {label}
+      </p>
+      <div className="flex gap-2">
+        <button
+          disabled={page <= 1}
+          onClick={() => onPage(page - 1)}
+          className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-bold disabled:opacity-40"
+        >
+          ← Prev
+        </button>
+        <button
+          disabled={page >= totalPages}
+          onClick={() => onPage(page + 1)}
+          className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-bold disabled:opacity-40"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Search input ---------- */
+export function SearchInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm w-full md:w-64 outline-none focus:border-neutral-500 placeholder:text-neutral-600"
+    />
   );
 }
