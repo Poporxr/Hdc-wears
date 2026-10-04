@@ -141,13 +141,6 @@ export default function Header() {
                       >
                         My Account
                       </Link>
-                      <Link
-                        href="/orders"
-                        className="block px-4 py-2.5 text-sm hover:bg-neutral-100"
-                        onClick={() => setAccountOpen(false)}
-                      >
-                        My Orders
-                      </Link>
                       <button
                         className="block w-full text-left px-4 py-2.5 text-sm hover:bg-neutral-100"
                         onClick={() => {

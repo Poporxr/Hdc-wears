@@ -66,13 +66,14 @@ function OrdersInner() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {orders.map((o) => (
-              <div
+              <Link
                 key={o.id}
-                className="border border-neutral-200 rounded-xl p-5"
+                href={`/orders/${o.id}`}
+                className="block border border-neutral-200 rounded-xl p-5 hover:border-black transition-colors"
               >
-                <div className="flex justify-between items-start gap-3">
+                <div className="flex justify-between items-center gap-3">
                   <div>
                     <p className="font-bold font-mono text-sm">
                       #{o.id.slice(0, 8).toUpperCase()}
@@ -86,19 +87,10 @@ function OrdersInner() {
                           })
                         : ""}
                       {" · "}
-                      {o.items?.length || 0} item{(o.items?.length || 0) === 1 ? "" : "s"}
-                      {" · "}
                       {formatPrice(o.total || 0)}
                     </p>
-                    {o.items && o.items.length > 0 && (
-                      <p className="text-neutral-500 text-xs mt-1">
-                        {o.items
-                          .map((i) => `${i.name} (${i.size} ×${i.qty})`)
-                          .join(", ")}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700">
                       {(STATUS_LABELS[o.status || "pending"] || o.status || "pending").toUpperCase()}
                     </span>
@@ -113,9 +105,10 @@ function OrdersInner() {
                     >
                       {(PAYMENT_LABELS[o.paymentStatus || "unpaid"] || "Unpaid").toUpperCase()}
                     </span>
+                    <span className="text-neutral-400 font-bold">→</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

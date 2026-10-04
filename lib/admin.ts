@@ -148,3 +148,25 @@ export async function updateDeliveryStatus(deliveryId: string, status: string) {
   const { updateDoc, doc: docRef } = await import("firebase/firestore");
   await updateDoc(docRef(db, "deliveries", deliveryId), { status });
 }
+
+/** Get a single order doc. */
+export async function getOrder(
+  orderId: string
+): Promise<{ id: string; [k: string]: unknown } | null> {
+  if (!db) return null;
+  const { getDoc, doc: docRef } = await import("firebase/firestore");
+  const snap = await getDoc(docRef(db, "orders", orderId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...(snap.data() as Record<string, unknown>) };
+}
+
+/** Admin: manually mark an order as paid (bank transfer / manual verification). */
+export async function markOrderPaid(orderId: string) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc, doc: docRef } = await import("firebase/firestore");
+  await updateDoc(docRef(db, "orders", orderId), {
+    paymentStatus: "paid",
+    status: "confirmed",
+    paidAt: new Date().toISOString(),
+  });
+}

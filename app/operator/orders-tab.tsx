@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listOrders, updateOrderStatus } from "@/lib/admin";
+import { listOrders, updateOrderStatus, markOrderPaid } from "@/lib/admin";
 import { onOrderStatusChange } from "@/lib/email-triggers";
 import { formatPrice } from "@/lib/products";
 import { useToast } from "@/components/toast";
@@ -56,6 +56,25 @@ export default function OrdersTab() {
       .catch(() => setOrders([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const markPaid = async (o: Order) => {
+    setBusy(o.id);
+    try {
+      await markOrderPaid(o.id);
+      setOrders((prev) =>
+        prev.map((x) =>
+          x.id === o.id
+            ? { ...x, paymentStatus: "paid", status: "confirmed" }
+            : x
+        )
+      );
+      toast({ title: "Marked as paid", variant: "success" });
+    } catch {
+      toast({ title: "Update failed", variant: "error" });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const setStatus = async (o: Order, status: string) => {
     if (o.status === status) return;
@@ -182,6 +201,15 @@ export default function OrdersTab() {
                     className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white text-black disabled:opacity-50"
                   >
                     {busy === o.id ? "..." : "VERIFY PAYMENT"}
+                  </button>
+                )}
+                {o.paymentStatus !== "paid" && (
+                  <button
+                    disabled={busy === o.id}
+                    onClick={() => markPaid(o)}
+                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-green-700 text-white disabled:opacity-50"
+                  >
+                    {busy === o.id ? "..." : "MARK PAID"}
                   </button>
                 )}
                 {STATUSES.map((s) => (
