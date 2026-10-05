@@ -1,13 +1,47 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
 import { categories, getCategory } from "@/lib/products";
 import { fetchProducts } from "@/lib/db";
+import { SITE_URL, SITE_NAME, SITE_TAGLINE } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = getCategory(slug);
+  const label = category ? category.label : "Shop";
+  const title = `${label} — ${SITE_NAME}`;
+  const description = `Shop ${label.toLowerCase()} at ${SITE_NAME}. ${SITE_TAGLINE}`;
+  const url = `${SITE_URL}/category/${slug}`;
+
+  return {
+    title: label,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      url,
+      siteName: SITE_NAME,
+      title,
+      description,
+      images: [{ url: `${url}/opengraph-image`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${url}/opengraph-image`],
+    },
+  };
 }
 
 export default async function CategoryPage({

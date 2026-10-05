@@ -1,5 +1,12 @@
 import InfoPage from "@/components/InfoPage";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "The story behind High Dream Chasers — HDC Wears, Lagos Nigeria streetwear.",
+};
+
 export default function AboutPage() {
   return (
     <InfoPage title="ABOUT HDC WEARS">

@@ -1,5 +1,12 @@
 import InfoPage from "@/components/InfoPage";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "FAQ",
+  description: "Frequently asked questions about HDC Wears orders, shipping, and returns.",
+};
+
 const faqs = [
   {
     q: "Where do you deliver?",

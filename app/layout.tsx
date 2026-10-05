@@ -4,6 +4,13 @@ import { StoreProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
 import { ToastProvider } from "@/components/toast";
 import ImagePreloader from "@/components/ImagePreloader";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  organizationJsonLd,
+  websiteJsonLd,
+} from "@/lib/seo";
 import "./globals.css";
 
 const anton = Anton({
@@ -18,9 +25,40 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HDC Wears — High Dream Chasers",
-  description:
-    "HDC Wears — quality everyday pieces designed for comfort, confidence, and clean personal style.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — High Dream Chasers`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "HDC Wears",
+    "High Dream Chasers",
+    "Nigerian streetwear",
+    "Lagos fashion",
+    "bandana tee",
+    "streetwear Nigeria",
+    "buy clothes online Nigeria",
+  ],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — High Dream Chasers`,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — High Dream Chasers`,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +72,16 @@ export default function RootLayout({
       className={`${anton.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+        />
         <AuthProvider>
           <StoreProvider>
             <ToastProvider>{children}</ToastProvider>
