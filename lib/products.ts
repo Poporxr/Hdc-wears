@@ -7,7 +7,7 @@ export type Product = {
   name: string;
   color: string;
   price: number; // in Naira
-  category: "clothing" | "accessories" | "footwear" | "combo";
+  category: "clothing" | "accessories" | "footwear";
   inStock: boolean;
   description: string;
   images: string[]; // gallery: front, back, detail — flippable
@@ -103,14 +103,13 @@ export const navLinks = [
   { label: "CLOTHING", href: "/category/clothing" },
   { label: "ACCESSORIES", href: "/category/accessories" },
   { label: "FOOTWEAR", href: "/category/footwear" },
-  { label: "HDC COMBO", href: "/category/combo" },
 ];
 
 export const drawerLinks = [
   { label: "CLOTHING", href: "/category/clothing" },
   { label: "ACCESSORIES", href: "/category/accessories" },
   { label: "FOOTWEAR", href: "/category/footwear" },
-  { label: "HDC COMBO", href: "/category/combo" },
+  { label: "BRAND STORY", href: "/brand-story" },
   { label: "GALLERY", href: "/gallery" },
   { label: "MY WISHLIST", href: "/wishlist" },
   { label: "MY ORDERS", href: "/orders" },
@@ -121,7 +120,6 @@ export const categories = [
   { slug: "clothing", label: "CLOTHING" },
   { slug: "accessories", label: "ACCESSORIES" },
   { slug: "footwear", label: "FOOTWEAR" },
-  { slug: "combo", label: "HDC COMBO" },
 ] as const;
 
 export type CategorySlug = (typeof categories)[number]["slug"];

@@ -219,3 +219,61 @@ export async function markOrderPaid(orderId: string): Promise<boolean> {
   });
   return true;
 }
+
+export type DesignRequest = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  garment: string;
+  description: string;
+  imageUrl?: string;
+  status: "new" | "contacted" | "quoted" | "done";
+  userId?: string;
+  createdAt: number;
+};
+
+export const DESIGN_STATUSES: DesignRequest["status"][] = [
+  "new",
+  "contacted",
+  "quoted",
+  "done",
+];
+
+/** Customer: file a custom design request (signed-in users only, per rules). */
+export async function submitDesignRequest(
+  data: Omit<DesignRequest, "id" | "status" | "createdAt">
+): Promise<string> {
+  if (!db) throw new Error("Firebase not configured");
+  const ref = await addDoc(collection(db, "design_requests"), {
+    ...data,
+    status: "new",
+    createdAt: Date.now(),
+  });
+  return ref.id;
+}
+
+/** Admin: list all design requests, newest first. */
+export async function listDesignRequests(): Promise<DesignRequest[]> {
+  if (!db) return [];
+  const snap = await getDocs(collection(db, "design_requests"));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as Omit<DesignRequest, "id">) }))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+/** Admin: move a design request through the triage pipeline. */
+export async function updateDesignRequestStatus(
+  id: string,
+  status: DesignRequest["status"]
+) {
+  if (!db) throw new Error("Firebase not configured");
+  const { updateDoc } = await import("firebase/firestore");
+  await updateDoc(doc(db, "design_requests", id), { status });
+}
+
+/** Admin: delete a design request. */
+export async function deleteDesignRequest(id: string) {
+  if (!db) throw new Error("Firebase not configured");
+  await deleteDoc(doc(db, "design_requests", id));
+}

@@ -146,7 +146,6 @@ function ProductForm({
             <option value="clothing">Clothing</option>
             <option value="accessories">Accessories</option>
             <option value="footwear">Footwear</option>
-            <option value="combo">HDC Combo</option>
           </select>
         </div>
       </div>

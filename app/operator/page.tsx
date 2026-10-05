@@ -11,6 +11,7 @@ import ProductsTab from "./products-tab";
 import OrdersTab from "./orders-tab";
 import DeliveriesTab from "./deliveries-tab";
 import GalleryTab from "./gallery-tab";
+import DesignsTab from "./designs-tab";
 import CustomersTab from "./customers-tab";
 import EmailsTab from "./emails-tab";
 
@@ -19,6 +20,7 @@ const TABS = [
   { id: "products", label: "Products", icon: "◫" },
   { id: "orders", label: "Orders", icon: "≡" },
   { id: "deliveries", label: "Deliveries", icon: "▤" },
+  { id: "designs", label: "Designs", icon: "✎" },
   { id: "gallery", label: "Gallery", icon: "▦" },
   { id: "customers", label: "Customers", icon: "○" },
   { id: "emails", label: "Emails", icon: "✉" },
@@ -287,6 +289,7 @@ function OperatorInner() {
         {tab === "products" && <ProductsTab />}
         {tab === "orders" && <OrdersTab />}
         {tab === "deliveries" && <DeliveriesTab />}
+        {tab === "designs" && <DesignsTab />}
         {tab === "gallery" && <GalleryTab />}
         {tab === "customers" && <CustomersTab />}
         {tab === "emails" && <EmailsTab />}

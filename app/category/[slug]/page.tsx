@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
@@ -19,7 +20,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const category = getCategory(slug);
-  const label = category ? category.label : "Shop";
+  if (!category) notFound();
+  const label = category.label;
   const title = `${label} — ${SITE_NAME}`;
   const description = `Shop ${label.toLowerCase()} at ${SITE_NAME}. ${SITE_TAGLINE}`;
   const url = `${SITE_URL}/category/${slug}`;
@@ -51,11 +53,9 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params;
   const category = getCategory(slug);
+  if (!category) notFound();
   const products = await fetchProducts().catch(() => []);
-  const list =
-    slug === "combo"
-      ? products.filter((p) => p.category === "clothing").slice(0, 4)
-      : products.filter((p) => p.category === slug);
+  const list = products.filter((p) => p.category === slug);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">

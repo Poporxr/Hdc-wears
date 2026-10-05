@@ -58,10 +58,10 @@ export default function SiteFooter() {
 
         <div className="grid grid-cols-2 gap-8 mt-10 text-sm">
           <div>
-            <p className="font-bold tracking-wide mb-4">ABOUT</p>
+            <p className="font-bold tracking-wide mb-4">BRAND STORY</p>
             <ul className="space-y-3 text-white/70">
               <li><Link href="/contact" className="hover:text-white">CONTACT</Link></li>
-              <li><Link href="/about" className="hover:text-white">ABOUT</Link></li>
+              <li><Link href="/brand-story" className="hover:text-white">BRAND STORY</Link></li>
             </ul>
           </div>
           <div>
