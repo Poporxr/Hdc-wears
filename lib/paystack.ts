@@ -134,7 +134,12 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
 export async function confirmPaidOrder(
   orderId: string,
   opts: { amountNgn: number; paidAt?: string }
-): Promise<{ confirmed: boolean; already?: boolean; reason?: string }> {
+): Promise<{
+  confirmed: boolean;
+  already?: boolean;
+  reason?: string;
+  emailSent?: boolean;
+}> {
   const { fsGet, fsUpdate } = await import("./firebase-admin");
   const { sendEmail } = await import("./server-email");
   const { formatPrice } = await import("./products");
@@ -198,6 +203,7 @@ export async function confirmPaidOrder(
   // Confirmation email — the customer paid, they hear about it.
   // Runs on the single shared email service. Failures are logged, never
   // swallowed: a paid customer must get this email.
+  let emailSent = false;
   if (o.email) {
     try {
       const result = await sendEmail("order_confirmation", o.email, {
@@ -214,12 +220,26 @@ export async function confirmPaidOrder(
         `[confirmPaidOrder] confirmation email sent to ${o.email}`,
         result.ids
       );
+      emailSent = true;
+      // Marker so the callback page knows not to fire its backup email.
+      try {
+        await fsUpdate("orders", orderId, { confirmationEmailSent: true });
+      } catch (markErr) {
+        console.error(
+          `[confirmPaidOrder] could not mark email sent for ${orderId}:`,
+          markErr
+        );
+      }
     } catch (err) {
       console.error(
         `[confirmPaidOrder] confirmation email FAILED for order ${orderId}:`,
         err
       );
     }
+  } else {
+    console.error(
+      `[confirmPaidOrder] no email on order ${orderId} — confirmation email skipped`
+    );
   }
 
   // Telegram admin ping — same pattern as firstbookings: fires on the
@@ -234,7 +254,7 @@ export async function confirmPaidOrder(
     total: o.total,
   });
 
-  return { confirmed: true };
+  return { confirmed: true, emailSent };
 }
 
 /** Mark a pending order failed server-side (payment failed / expired). */

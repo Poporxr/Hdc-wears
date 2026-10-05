@@ -70,8 +70,10 @@ export function buildEmail(
 
 /**
  * Send an email to one or more recipients. One Resend call per recipient
- * so nobody ever sees the other addresses. Throws on failure — the caller
- * decides whether to log, retry, or surface it. Never silently swallows.
+ * so nobody ever sees the other addresses. Uses batch.send (single-item
+ * batches) — the exact path the proven /api/email/send route uses.
+ * Throws on failure — the caller decides whether to log, retry, or
+ * surface it. Never silently swallows.
  */
 export async function sendEmail(
   type: EmailType,
@@ -85,13 +87,13 @@ export async function sendEmail(
   const from = fromAddress();
   const ids: (string | undefined)[] = [];
   for (const email of recipients) {
-    const result = await resend.emails.send({ from, to: email, subject, html });
+    const result = await resend.batch.send([{ from, to: email, subject, html }]);
     if (result.error) {
       throw new Error(
         `Resend error (${result.error.name || "send"}): ${result.error.message}`
       );
     }
-    ids.push(result.data?.id);
+    ids.push(result.data?.data?.[0]?.id);
   }
   return { sent: recipients.length, ids };
 }
@@ -109,16 +111,13 @@ export async function sendServerEmail(opts: {
   if (recipients.length === 0) throw new Error("No recipients");
   const resend = resendClient();
   const from = fromAddress();
-  const result = await resend.emails.send({
-    from,
-    to: opts.to,
-    subject: opts.subject,
-    html: opts.html,
-  });
+  const result = await resend.batch.send([
+    { from, to: opts.to, subject: opts.subject, html: opts.html },
+  ]);
   if (result.error) {
     throw new Error(
       `Resend error (${result.error.name || "send"}): ${result.error.message}`
     );
   }
-  return { sent: 1, ids: [result.data?.id] };
+  return { sent: 1, ids: [result.data?.data?.[0]?.id] };
 }

@@ -46,6 +46,43 @@ function CallbackInner() {
         if (j.success) {
           clear();
           sessionStorage.removeItem("hdc_last_order");
+          // Backup confirmation email (Devan's call): if the server-side
+          // send didn't go through, fire it from here through the proven
+          // /api/email/send route. The server marks emailSent, so this
+          // only fires when the first attempt missed.
+          if (!j.emailSent && j.order) {
+            try {
+              const ord = j.order as {
+                name?: string;
+                email?: string;
+                items?: { name: string; qty: number; price: number }[];
+                total?: number;
+              };
+              const to = ord.email || j.email;
+              if (to) {
+                await fetch("/api/email/send", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    type: "order_confirmation",
+                    to,
+                    data: {
+                      name: ord.name || "there",
+                      orderId: j.orderId,
+                      items: (ord.items || []).map((i) => ({
+                        name: i.name,
+                        qty: i.qty,
+                        price: formatPrice(i.price * i.qty),
+                      })),
+                      total: formatPrice(ord.total || j.amountNgn || 0),
+                    },
+                  }),
+                });
+              }
+            } catch (backupErr) {
+              console.error("Backup confirmation email failed:", backupErr);
+            }
+          }
           toast({ title: "Payment successful", variant: "success" });
           setState({
             kind: "success",

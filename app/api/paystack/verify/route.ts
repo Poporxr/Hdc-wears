@@ -42,15 +42,45 @@ export async function POST(req: NextRequest) {
         amountNgn: data.amount / 100,
         paidAt: data.paid_at,
       });
+      // Order details for the callback page's backup confirmation email
+      // (fires only if the server-side send didn't go through).
+      let orderDetails: {
+        name?: string;
+        email?: string;
+        items?: { name: string; qty: number; price: number }[];
+        total?: number;
+      } | undefined;
+      try {
+        const { fsGet } = await import("@/lib/firebase-admin");
+        const doc = await fsGet("orders", orderId);
+        const d = doc?.data as
+          | {
+              name?: string;
+              email?: string;
+              items?: { name: string; qty: number; price: number }[];
+              total?: number;
+            }
+          | undefined;
+        if (d) {
+          orderDetails = {
+            name: d.name,
+            email: d.email,
+            items: d.items,
+            total: d.total,
+          };
+        }
+      } catch {}
       return NextResponse.json({
         ok: true,
         success: result.confirmed,
         already: result.already,
+        emailSent: result.emailSent === true,
         reason: result.reason,
         reference: data.reference,
         amountNgn: data.amount / 100,
         email: data.customer?.email,
         orderId,
+        order: orderDetails,
         paidAt: data.paid_at,
       });
     }

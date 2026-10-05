@@ -23,6 +23,9 @@ export type UserProfile = {
   email: string | null;
   name: string | null;
   phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
   photoURL: string | null;
   createdAt: number;
 };
@@ -51,6 +54,9 @@ async function ensureUserDoc(fbUser: FirebaseUser): Promise<UserProfile> {
     email: fbUser.email,
     name: fbUser.displayName,
     phone: null,
+    address: null,
+    city: null,
+    state: null,
     photoURL: fbUser.photoURL,
     createdAt: Date.now(),
   };
@@ -99,7 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveProfile = useCallback(
-    async (data: Partial<Pick<UserProfile, "name" | "phone">>) => {
+    async (
+      data: Partial<Pick<UserProfile, "name" | "phone" | "address" | "city" | "state">>
+    ) => {
       if (!db || !user) throw new Error("Not signed in");
       await updateDoc(doc(db, "users", user.uid), data);
       setProfile((p) => (p ? { ...p, ...data } : p));

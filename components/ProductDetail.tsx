@@ -253,13 +253,35 @@ export default function ProductDetail({ slug }: { slug: string }) {
               </label>
               <label className="block">
                 <span className="text-xs text-neutral-500">Qty</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={qty}
-                  onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                  className="mt-1 w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-sm"
-                />
+                <div className="mt-1 flex items-center border border-neutral-300 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    aria-label="Decrease quantity"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="px-4 py-2.5 text-lg font-bold text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={qty}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      setQty(Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1);
+                    }}
+                    onBlur={() => setQty((q) => (q < 1 || !Number.isFinite(q) ? 1 : q))}
+                    className="w-full text-center text-sm py-2.5 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Increase quantity"
+                    onClick={() => setQty((q) => q + 1)}
+                    className="px-4 py-2.5 text-lg font-bold text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200"
+                  >
+                    +
+                  </button>
+                </div>
               </label>
             </div>
 

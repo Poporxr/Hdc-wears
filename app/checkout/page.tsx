@@ -35,6 +35,9 @@ export default function CheckoutPage() {
   const nameValue = formName || profile?.name || "";
   const phoneValue = formPhone || profile?.phone || "";
   const emailValue = profile?.email || user?.email || "";
+  const addressValue = address || profile?.address || "";
+  const cityValue = city || profile?.city || "";
+  const stateValue = state || profile?.state || "";
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +45,20 @@ export default function CheckoutPage() {
     payGuard.current = true;
     setPaying(true);
     try {
-      // Save missing profile details
+      // Save delivery details to the profile so the next order prefills.
       if (profile) {
-        const updates: { name?: string; phone?: string } = {};
-        if (!profile.name && nameValue.trim()) updates.name = nameValue.trim();
-        if (!profile.phone && phoneValue.trim()) updates.phone = phoneValue.trim();
+        const updates: {
+          name?: string;
+          phone?: string;
+          address?: string;
+          city?: string;
+          state?: string;
+        } = {};
+        if (nameValue.trim()) updates.name = nameValue.trim();
+        if (phoneValue.trim()) updates.phone = phoneValue.trim();
+        if (addressValue.trim()) updates.address = addressValue.trim();
+        if (cityValue.trim()) updates.city = cityValue.trim();
+        if (stateValue.trim()) updates.state = stateValue.trim();
         if (Object.keys(updates).length > 0) {
           try {
             await saveProfile(updates);
@@ -71,9 +83,9 @@ export default function CheckoutPage() {
         email: emailValue,
         name: nameValue.trim(),
         phone: phoneValue.trim(),
-        address: address.trim(),
-        city: city.trim(),
-        state: state.trim(),
+        address: addressValue.trim(),
+        city: cityValue.trim(),
+        state: stateValue.trim(),
         items: orderItems,
         itemsTotal: subtotal,
         deliveryFee: DELIVERY_FEE_NGN,
@@ -169,7 +181,7 @@ export default function CheckoutPage() {
                 type="text"
                 placeholder="Address*"
                 className={inputCls}
-                value={address}
+                value={addressValue}
                 onChange={(e) => setAddress(e.target.value)}
               />
               <div className="grid grid-cols-2 gap-4">
@@ -178,14 +190,14 @@ export default function CheckoutPage() {
                   type="text"
                   placeholder="City*"
                   className={inputCls}
-                  value={city}
+                  value={cityValue}
                   onChange={(e) => setCity(e.target.value)}
                 />
                 <input
                   type="text"
                   placeholder="State"
                   className={inputCls}
-                  value={state}
+                  value={stateValue}
                   onChange={(e) => setState(e.target.value)}
                 />
               </div>
