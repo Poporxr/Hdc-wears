@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "./firebase";
 import type { Product } from "./products";
+import { productType } from "./products";
 
 export const CLOUDINARY_BASE = "https://res.cloudinary.com/doc3mb9if/image/upload";
 
@@ -76,7 +77,15 @@ export function youMightLikeSync(
   excludeSlug: string,
   count = 6
 ) {
-  return products.filter((p) => p.slug !== excludeSlug).slice(0, count);
+  const rest = products.filter((p) => p.slug !== excludeSlug);
+  const current = products.find((p) => p.slug === excludeSlug);
+  if (!current) return rest.slice(0, count);
+  const t = productType(current);
+  // Same silhouette first (tanks with tanks, tees with tees), then the rest.
+  return [
+    ...rest.filter((p) => productType(p) === t),
+    ...rest.filter((p) => productType(p) !== t),
+  ].slice(0, count);
 }
 
 /** Bust the products cache (call after admin mutations). */

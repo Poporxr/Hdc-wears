@@ -5,6 +5,7 @@ import GallerySection from "@/components/GallerySection";
 import SiteFooter from "@/components/SiteFooter";
 import { fetchProducts } from "@/lib/db";
 import { cl } from "@/lib/db";
+import { interleaveShopOrder } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ const HERO_COLORS = ["red", "black", "green", "blue"];
 
 export default async function Home() {
   const products = await fetchProducts().catch(() => []);
+  const ordered = interleaveShopOrder(products);
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {HERO_COLORS.map((c) => (
@@ -40,7 +42,7 @@ export default async function Home() {
             YOU MIGHT LIKE
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((p) => (
+            {ordered.map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>

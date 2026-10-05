@@ -16,6 +16,31 @@ export type Product = {
 
 export const CURRENCY = "₦";
 
+/** Product silhouette, derived from the slug/name so no Firestore field is needed. */
+export type ProductType = "tee" | "tank" | "other";
+
+export function productType(p: Pick<Product, "slug" | "name">): ProductType {
+  const s = `${p.slug} ${p.name}`.toLowerCase();
+  if (s.includes("tank") || s.includes("vest")) return "tank";
+  if (s.includes("tee") || s.includes("shirt")) return "tee";
+  return "other";
+}
+
+/** Interleaved shop order: 2 tees, 2 tanks, then the rest of each. Shuffled per call. */
+export function interleaveShopOrder(products: Product[]): Product[] {
+  const shuffled = [...products];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const tees = shuffled.filter((p) => productType(p) === "tee");
+  const tanks = shuffled.filter((p) => productType(p) === "tank");
+  const other = shuffled.filter(
+    (p) => productType(p) !== "tee" && productType(p) !== "tank"
+  );
+  return [...tees.slice(0, 2), ...tanks.slice(0, 2), ...tees.slice(2), ...tanks.slice(2), ...other];
+}
+
 /** Flat delivery fee in NGN, added to every order. */
 export const DELIVERY_FEE_NGN = 5000;
 
