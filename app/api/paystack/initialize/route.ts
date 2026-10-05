@@ -6,8 +6,7 @@ import {
 } from "@/lib/paystack";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
-import { sendServerEmail } from "@/lib/server-email";
-import { orderCreatedEmail } from "@/lib/emails";
+import { sendEmail } from "@/lib/server-email";
 import { formatPrice } from "@/lib/products";
 
 /**
@@ -114,18 +113,33 @@ export async function POST(req: NextRequest) {
         | undefined;
       customerName = o?.name || "there";
       orderItems = o?.items || [];
-      const e = orderCreatedEmail({
-        name: customerName,
-        orderId,
-        items: orderItems.map((i) => ({
-          name: i.name,
-          qty: i.qty,
-          price: formatPrice(i.price * i.qty),
-        })),
-        total: formatPrice(total),
-      });
-      await sendServerEmail({ to: email, subject: e.subject, html: e.html });
-    } catch {}
+      try {
+        const result = await sendEmail("order_created", email, {
+          name: customerName,
+          orderId,
+          items: orderItems.map((i) => ({
+            name: i.name,
+            qty: i.qty,
+            price: formatPrice(i.price * i.qty),
+          })),
+          total: formatPrice(total),
+        });
+        console.log(
+          `[paystack/initialize] order-created email sent to ${email}`,
+          result.ids
+        );
+      } catch (err) {
+        console.error(
+          `[paystack/initialize] order-created email FAILED for order ${orderId}:`,
+          err
+        );
+      }
+    } catch (err) {
+      console.error(
+        `[paystack/initialize] order lookup failed for order ${orderId}:`,
+        err
+      );
+    }
 
     return NextResponse.json({
       ok: true,

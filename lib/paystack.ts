@@ -136,8 +136,7 @@ export async function confirmPaidOrder(
   opts: { amountNgn: number; paidAt?: string }
 ): Promise<{ confirmed: boolean; already?: boolean; reason?: string }> {
   const { fsGet, fsUpdate } = await import("./firebase-admin");
-  const { sendServerEmail } = await import("./server-email");
-  const { orderConfirmationEmail } = await import("./emails");
+  const { sendEmail } = await import("./server-email");
   const { formatPrice } = await import("./products");
 
   const doc = await fsGet("orders", orderId);
@@ -147,7 +146,8 @@ export async function confirmPaidOrder(
     paymentStatus?: string;
     email?: string;
     name?: string;
-    items?: { name: string; qty: number; price: number }[];
+    phone?: string;
+    items?: { name: string; qty: number; price: number; size?: string }[];
     total?: number;
     expiresAt?: number;
   };
@@ -196,9 +196,11 @@ export async function confirmPaidOrder(
   }
 
   // Confirmation email — the customer paid, they hear about it.
+  // Runs on the single shared email service. Failures are logged, never
+  // swallowed: a paid customer must get this email.
   if (o.email) {
     try {
-      const e = orderConfirmationEmail({
+      const result = await sendEmail("order_confirmation", o.email, {
         name: o.name || "there",
         orderId,
         items: (o.items || []).map((i) => ({
@@ -208,9 +210,29 @@ export async function confirmPaidOrder(
         })),
         total: formatPrice(o.total || 0),
       });
-      await sendServerEmail({ to: o.email, subject: e.subject, html: e.html });
-    } catch {}
+      console.log(
+        `[confirmPaidOrder] confirmation email sent to ${o.email}`,
+        result.ids
+      );
+    } catch (err) {
+      console.error(
+        `[confirmPaidOrder] confirmation email FAILED for order ${orderId}:`,
+        err
+      );
+    }
   }
+
+  // Telegram admin ping — same pattern as firstbookings: fires on the
+  // first (and only the first) successful confirmation.
+  const { notifyAdminsOfPaidOrderIfNeeded } = await import("./telegram");
+  await notifyAdminsOfPaidOrderIfNeeded({
+    id: orderId,
+    name: o.name,
+    email: o.email,
+    phone: o.phone,
+    items: o.items,
+    total: o.total,
+  });
 
   return { confirmed: true };
 }
