@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchGallery, type GalleryImage, cl } from "@/lib/db";
+import { fetchGallery, fetchProducts, type GalleryImage, cl } from "@/lib/db";
+import type { Product } from "@/lib/products";
 
 function Tile({ image, label }: { image: string; label: string }) {
   return (
@@ -114,5 +115,63 @@ export function GalleryGrid() {
         />
       ))}
     </div>
+  );
+}
+
+/** Studio product photoshoots, grouped by product. */
+export function StudioSection() {
+  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    fetchProducts()
+      .then(setProducts)
+      .catch(() => setProducts([]));
+  }, []);
+
+  if (products.length === 0) return null;
+
+  return (
+    <section className="mt-16 md:mt-24">
+      <p className="text-xs font-bold tracking-[0.25em] text-neutral-400 mb-2">
+        PRODUCT PHOTOSHOOTS
+      </p>
+      <h2 className="font-display font-black text-2xl md:text-3xl tracking-tight mb-8">
+        STUDIO
+      </h2>
+      <div className="space-y-10 md:space-y-14">
+        {products.map((p) => (
+          <div key={p.slug}>
+            <div className="flex items-baseline justify-between mb-4">
+              <h3 className="font-bold text-base md:text-lg tracking-tight">
+                {p.name}{" "}
+                <span className="text-neutral-400 font-normal">/ {p.color}</span>
+              </h3>
+              <Link
+                href={`/product/${p.slug}`}
+                className="text-xs font-bold tracking-widest underline underline-offset-4 hover:opacity-70 transition-opacity shrink-0"
+              >
+                VIEW PRODUCT
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
+              {p.images.slice(0, 4).map((src, i) => (
+                <Link
+                  key={i}
+                  href={`/product/${p.slug}`}
+                  className="group relative aspect-[4/5] overflow-hidden bg-[#f1f2f5]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${p.name} ${p.color} studio shot ${i + 1}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

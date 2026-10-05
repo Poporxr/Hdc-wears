@@ -86,6 +86,7 @@ export const drawerLinks = [
   { label: "ACCESSORIES", href: "/category/accessories" },
   { label: "FOOTWEAR", href: "/category/footwear" },
   { label: "HDC COMBO", href: "/category/combo" },
+  { label: "GALLERY", href: "/gallery" },
   { label: "MY WISHLIST", href: "/wishlist" },
   { label: "MY ORDERS", href: "/orders" },
   { label: "CUSTOM DESIGN", href: "/custom-design" },

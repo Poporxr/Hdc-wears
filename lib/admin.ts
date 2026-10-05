@@ -73,6 +73,12 @@ export async function deleteGalleryImage(key: string) {
   await deleteDoc(doc(db, "gallery", key));
 }
 
+/** Admin: add a gallery image doc (image must already be on Cloudinary under hdc-wears/gallery/). */
+export async function addGalleryImage(key: string, label: string) {
+  if (!db) throw new Error("Firebase not configured");
+  await setDoc(doc(db, "gallery", key), { key, label });
+}
+
 /** Admin: delete a product. */
 export async function deleteProduct(slug: string) {
   if (!db) throw new Error("Firebase not configured");

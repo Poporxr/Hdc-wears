@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { fetchGallery, cl, type GalleryImage } from "@/lib/db";
-import { deleteGalleryImage } from "@/lib/admin";
+import { addGalleryImage, deleteGalleryImage } from "@/lib/admin";
 import { useToast } from "@/components/toast";
+
+const PRESET_KEYS = [
+  "tank-mannequin-crimson-front",
+  "tank-mannequin-crimson-back",
+  "tank-mannequin-black-front",
+  "tank-mannequin-black-back",
+  "tank-mannequin-brown-front",
+  "tank-mannequin-brown-back",
+  "tank-mannequin-ash-front",
+  "tank-mannequin-ash-back",
+];
 
 export default function GalleryTab() {
   const toast = useToast();
@@ -31,6 +42,20 @@ export default function GalleryTab() {
     }
   };
 
+  const add = async (key: string) => {
+    const label = key.replace(/-/g, " ");
+    try {
+      await addGalleryImage(key, label);
+      toast({ title: "Added to gallery", description: key, variant: "success" });
+      load();
+    } catch {
+      toast({ title: "Add failed", variant: "error" });
+    }
+  };
+
+  const existing = new Set(images.map((g) => g.key));
+  const missing = PRESET_KEYS.filter((k) => !existing.has(k));
+
   if (loading) {
     return <p className="animate-pulse text-neutral-500 text-sm">Loading gallery...</p>;
   }
@@ -44,6 +69,25 @@ export default function GalleryTab() {
         These power the HDC WORLD strip and /gallery page. Upload new shots to
         Cloudinary under hdc-wears/gallery/, then add the doc in Firestore.
       </p>
+      {missing.length > 0 && (
+        <div className="mb-6 p-4 border border-neutral-800 rounded-xl bg-neutral-900/50">
+          <p className="text-sm font-bold mb-1">READY TO ADD ({missing.length})</p>
+          <p className="text-neutral-500 text-xs mb-3">
+            Tank mannequin shots already on Cloudinary. Tap to add each to the gallery.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {missing.map((k) => (
+              <button
+                key={k}
+                onClick={() => add(k)}
+                className="bg-white text-black text-[11px] font-bold px-3 py-2 rounded-lg hover:opacity-80 transition-opacity"
+              >
+                + {k.replace("tank-mannequin-", "")}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {images.map((g) => (
           <div
