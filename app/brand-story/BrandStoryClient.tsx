@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
-import { cl } from "@/lib/db";
 
 function Reveal({
   children,
@@ -78,25 +77,118 @@ const CHAPTERS = [
     n: "01",
     title: "THE ROOTS",
     copy: "I grew up surrounded by style and creativity. Both of my parents are tailors, and the aunt who raised me was a tailor too. Fashion was not something I discovered later. It was always part of my environment, my identity, and the way I understood self-expression and confidence.",
-    img: cl("gallery/tank-mannequin-crimson-front-cropped.jpg", "f_auto,q_auto,w_800"),
+    art: "stitch" as const,
+    quote: "",
   },
   {
     n: "02",
     title: "THE QUESTION",
     copy: "As I got older, I noticed something. Most of the clothes I wore were counterfeits of popular international brands, while many original Nigerian brands felt financially out of reach for someone like me. That planted a question in my mind: why not create something of my own?",
+    art: "quote" as const,
+    quote: "\u201cWhy not create something of my own?\u201d",
   },
   {
     n: "03",
     title: "THE SPARK",
     copy: "Then I heard a Virgil Abloh interview. He said anyone who thinks Off-White is too expensive should start their own brand. Later, his advice to \u201csell yourself\u201d hit different. I started thinking seriously about who I am and what I represent.",
-    img: cl("gallery/tank-mannequin-black-front-cropped.jpg", "f_auto,q_auto,w_800"),
+    art: "spark" as const,
+    quote: "",
   },
   {
     n: "04",
     title: "THE NAME",
     copy: "I have always chased a bigger life, refusing to settle for less even when the odds were against me. HDC is that mindset with a name. High Dream Chasers stands for ambition, resilience, and the courage to dream loudly even when the world expects you to stay small.",
+    art: "quote" as const,
+    quote: "HIGH DREAM CHASERS",
   },
 ];
+
+/** Animated stitching thread — a nod to the tailoring roots. */
+function StitchArt({ chapter }: { chapter: string }) {
+  const paths = [
+    "M -20 110 C 70 90, 130 170, 210 150 S 350 200, 430 170",
+    "M -20 250 C 60 230, 140 300, 230 280 S 360 320, 430 290",
+    "M -20 390 C 90 370, 150 430, 240 410 S 350 450, 430 420",
+  ];
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-neutral-100 aspect-[4/5] md:aspect-auto md:min-h-[420px]">
+      <svg viewBox="0 0 410 500" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full">
+        {paths.map((d, i) => (
+          <g key={i}>
+            <path
+              d={d}
+              fill="none"
+              stroke="black"
+              strokeWidth="3"
+              strokeDasharray="12 9"
+              strokeLinecap="round"
+              className="animate-stitch"
+              style={{ animationDelay: `${i * 0.8}s`, opacity: 0.85 }}
+            />
+            <circle r="6" fill="black" className="animate-needle-glow">
+              <animateMotion dur={`${7 + i * 2}s`} repeatCount="indefinite" path={d} />
+            </circle>
+          </g>
+        ))}
+        <circle cx="205" cy="250" r="4" fill="black" opacity="0.25" />
+      </svg>
+      <span className="absolute bottom-4 left-4 bg-black text-white text-[10px] font-bold tracking-[0.3em] px-3 py-2 rounded-full">
+        CHAPTER {chapter}
+      </span>
+      <span className="absolute top-4 right-4 text-[10px] font-bold tracking-[0.3em] text-black/40">
+        EST. FROM THREAD
+      </span>
+    </div>
+  );
+}
+
+/** Radiating spark burst for the Virgil moment. */
+function SparkArt({ chapter }: { chapter: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-black text-white aspect-[4/5] md:aspect-auto md:min-h-[420px] flex items-center justify-center">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="absolute w-28 h-28 rounded-full border-2 border-white/50 animate-ping-slow"
+          style={{ animationDelay: `${i * 1.2}s` }}
+        />
+      ))}
+      <span className="absolute w-3 h-3 rounded-full bg-white animate-needle-glow" />
+      <div className="relative text-center px-6">
+        <p className="text-[10px] font-bold tracking-[0.35em] text-white/50 mb-4">
+          THE INTERVIEW THAT LIT IT
+        </p>
+        <p className="font-display font-black text-4xl md:text-5xl leading-[1.02]">
+          SELL
+          <br />
+          YOURSELF.
+        </p>
+      </div>
+      <span className="absolute bottom-4 left-4 bg-white text-black text-[10px] font-bold tracking-[0.3em] px-3 py-2 rounded-full">
+        CHAPTER {chapter}
+      </span>
+    </div>
+  );
+}
+
+function QuoteArt({ chapter, quote }: { chapter: string; quote: string }) {
+  return (
+    <div className="rounded-2xl bg-black text-white aspect-[4/5] md:aspect-auto md:min-h-[420px] flex flex-col justify-between p-8 md:p-10 overflow-hidden relative">
+      <span
+        aria-hidden
+        className="absolute -bottom-8 -right-4 font-display font-black text-[11rem] leading-none text-white/[0.06] select-none"
+      >
+        {chapter}
+      </span>
+      <p className="text-[10px] font-bold tracking-[0.3em] text-white/50">
+        CHAPTER {chapter}
+      </p>
+      <p className="font-display font-black text-3xl md:text-4xl leading-tight relative">
+        {quote}
+      </p>
+    </div>
+  );
+}
 
 const MARQUEE = Array(8).fill("HIGH DREAM CHASERS");
 
@@ -113,7 +205,7 @@ export default function BrandStoryClient() {
         >
           HDC
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-20 md:pt-28 pb-16 md:pb-24">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-10 md:pt-14 pb-16 md:pb-24">
           <p className="animate-rise-in text-[11px] md:text-xs font-bold tracking-[0.4em] text-white/50 mb-6">
             THE HDC STORY
           </p>
@@ -225,36 +317,12 @@ export default function BrandStoryClient() {
                 }`}
               >
                 <Reveal>
-                  {c.img ? (
-                    <div className="relative overflow-hidden rounded-2xl bg-neutral-100 aspect-[4/5] group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={c.img}
-                        alt={c.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
-                      />
-                      <span className="absolute bottom-4 left-4 bg-black text-white text-[10px] font-bold tracking-[0.3em] px-3 py-2 rounded-full">
-                        CHAPTER {c.n}
-                      </span>
-                    </div>
+                  {c.art === "stitch" ? (
+                    <StitchArt chapter={c.n} />
+                  ) : c.art === "spark" ? (
+                    <SparkArt chapter={c.n} />
                   ) : (
-                    <div className="rounded-2xl bg-black text-white aspect-[4/5] md:aspect-auto md:min-h-[420px] flex flex-col justify-between p-8 md:p-10 overflow-hidden relative">
-                      <span
-                        aria-hidden
-                        className="absolute -bottom-8 -right-4 font-display font-black text-[11rem] leading-none text-white/[0.06] select-none"
-                      >
-                        {c.n}
-                      </span>
-                      <p className="text-[10px] font-bold tracking-[0.3em] text-white/50">
-                        CHAPTER {c.n}
-                      </p>
-                      <p className="font-display font-black text-3xl md:text-4xl leading-tight relative">
-                        {c.title === "THE QUESTION"
-                          ? "\u201cWhy not create something of my own?\u201d"
-                          : "\u201cSell yourself.\u201d"}
-                      </p>
-                    </div>
+                    <QuoteArt chapter={c.n} quote={c.quote ?? ""} />
                   )}
                 </Reveal>
                 <Reveal delay={120}>

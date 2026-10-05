@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/lib/auth";
-import { submitDesignRequest } from "@/lib/admin";
 import { uploadImage } from "@/lib/upload";
 import { useToast } from "@/components/toast";
 
@@ -15,7 +14,7 @@ const inputCls =
 const GARMENTS = ["Tee", "Tank Top", "Cap", "Hoodie", "Crewneck", "Other"];
 
 export default function CustomDesignPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +29,18 @@ export default function CustomDesignPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  // Prefill from the signed-in profile when available — no login required.
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      name: f.name || profile?.name || "",
+      email: f.email || user.email || "",
+      phone: f.phone || profile?.phone || "",
+      garment: f.garment,
+      description: f.description,
+    }));
+  }, [user, profile]);
 
   const set = (k: keyof typeof form) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -48,29 +59,35 @@ export default function CustomDesignPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast({ title: "Please log in to send a request", variant: "info" });
-      return;
-    }
     setSending(true);
     try {
-      let imageUrl: string | undefined;
+      let imageUrl = "";
       if (imageFile) {
         const path = await uploadImage(imageFile, "designs");
         imageUrl = `https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/${path}`;
       }
-      await submitDesignRequest({
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        garment: form.garment,
-        description: form.description.trim(),
-        ...(imageUrl ? { imageUrl } : {}),
-        userId: user.uid,
+      const res = await fetch("/api/design-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          garment: form.garment,
+          description: form.description.trim(),
+          imageUrl,
+        }),
       });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) {
+        throw new Error(j.error || "Could not send request.");
+      }
       setSent(true);
-    } catch {
-      toast({ title: "Could not send request. Try again.", variant: "error" });
+    } catch (err) {
+      toast({
+        title: err instanceof Error ? err.message : "Could not send request. Try again.",
+        variant: "error",
+      });
     } finally {
       setSending(false);
     }
@@ -106,19 +123,6 @@ export default function CustomDesignPage() {
               className="inline-block mt-6 bg-black text-white text-sm font-bold tracking-wide px-8 py-3 rounded-full hover:opacity-80 transition"
             >
               BACK TO SHOP
-            </Link>
-          </div>
-        ) : !user ? (
-          <div className="border border-neutral-200 rounded-2xl p-8 text-center">
-            <p className="font-bold text-lg">Log in to request a custom piece</p>
-            <p className="text-neutral-500 text-sm mt-2">
-              We need your account so we can reach you about your design.
-            </p>
-            <Link
-              href="/login"
-              className="inline-block mt-6 bg-black text-white text-sm font-bold tracking-wide px-8 py-3 rounded-full hover:opacity-80 transition"
-            >
-              LOG IN
             </Link>
           </div>
         ) : (

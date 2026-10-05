@@ -75,7 +75,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+      <header className="sticky top-0 z-40 bg-white text-neutral-900 border-b border-neutral-200">
         <div className="flex items-center justify-between px-4 h-16">
           <div className="flex items-center gap-3">
             <button

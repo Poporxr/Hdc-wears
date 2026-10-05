@@ -240,19 +240,6 @@ export const DESIGN_STATUSES: DesignRequest["status"][] = [
   "done",
 ];
 
-/** Customer: file a custom design request (signed-in users only, per rules). */
-export async function submitDesignRequest(
-  data: Omit<DesignRequest, "id" | "status" | "createdAt">
-): Promise<string> {
-  if (!db) throw new Error("Firebase not configured");
-  const ref = await addDoc(collection(db, "design_requests"), {
-    ...data,
-    status: "new",
-    createdAt: Date.now(),
-  });
-  return ref.id;
-}
-
 /** Admin: list all design requests, newest first. */
 export async function listDesignRequests(): Promise<DesignRequest[]> {
   if (!db) return [];

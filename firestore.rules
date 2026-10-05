@@ -67,9 +67,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Custom design requests — signed-in users can file; admins triage.
+    // Custom design requests — filed server-side via /api/design-requests
+    // (service account, validated + rate-limited). Admins triage in /operator.
     match /design_requests/{id} {
-      allow create: if isSignedIn();
       allow read, update, delete: if isAdmin();
     }
 

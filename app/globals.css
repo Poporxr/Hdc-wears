@@ -127,3 +127,42 @@ body {
   -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.55);
   color: transparent;
 }
+
+@keyframes stitch-move {
+  to {
+    stroke-dashoffset: -360;
+  }
+}
+
+.animate-stitch {
+  animation: stitch-move 6s linear infinite;
+}
+
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 3.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes needle-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-needle-glow {
+  animation: needle-glow 1.6s ease-in-out infinite;
+}
