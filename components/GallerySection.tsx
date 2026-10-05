@@ -26,6 +26,11 @@ function Skeleton() {
   );
 }
 
+/** Community shots: docs with no section, or section "world". Never mixed with display/studio. */
+function isWorld(g: GalleryImage) {
+  return !g.section || g.section === "world";
+}
+
 export default function GallerySection() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   useEffect(() => {
@@ -34,7 +39,7 @@ export default function GallerySection() {
       .catch(() => setImages([]));
   }, []);
 
-  const shown = images.slice(0, 4);
+  const shown = images.filter(isWorld).slice(0, 4);
 
   return (
     <section className="mt-16 -mx-4 md:mx-0">
@@ -91,7 +96,7 @@ export function GalleryGrid() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   useEffect(() => {
     fetchGallery()
-      .then(setImages)
+      .then((all) => setImages(all.filter(isWorld)))
       .catch(() => setImages([]));
   }, []);
 
@@ -115,6 +120,38 @@ export function GalleryGrid() {
         />
       ))}
     </div>
+  );
+}
+
+/** In-store mannequin shots — their own reserved area, never mixed with HDC WORLD. */
+export function DisplaySection() {
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  useEffect(() => {
+    fetchGallery()
+      .then((all) => setImages(all.filter((g) => g.section === "display")))
+      .catch(() => setImages([]));
+  }, []);
+
+  if (images.length === 0) return null;
+
+  return (
+    <section className="mt-16 md:mt-24">
+      <p className="text-xs font-bold tracking-[0.25em] text-neutral-400 mb-2">
+        IN-STORE MANNEQUIN SHOTS
+      </p>
+      <h2 className="font-display font-black text-2xl md:text-3xl tracking-tight mb-8">
+        ON DISPLAY
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
+        {images.map((g) => (
+          <Tile
+            key={g.key}
+            image={cl(`gallery/${g.key}`, "f_auto,q_auto,w_600")}
+            label={g.label}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

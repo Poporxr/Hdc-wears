@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
-import { GalleryGrid, StudioSection } from "@/components/GallerySection";
+import { GalleryGrid, DisplaySection, StudioSection } from "@/components/GallerySection";
 
 import type { Metadata } from "next";
 
@@ -29,6 +29,8 @@ export default function GalleryPage() {
           HDC WORLD
         </h2>
         <GalleryGrid />
+
+        <DisplaySection />
 
         <StudioSection />
       </main>

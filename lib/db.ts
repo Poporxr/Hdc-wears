@@ -42,7 +42,7 @@ export async function fetchProduct(slug: string): Promise<Product | undefined> {
   return toProduct(snap.id, snap.data());
 }
 
-export type GalleryImage = { key: string; image: string; label: string };
+export type GalleryImage = { key: string; image: string; label: string; section?: string };
 
 let galleryCache: Promise<GalleryImage[]> | null = null;
 
@@ -56,6 +56,7 @@ export function fetchGallery(): Promise<GalleryImage[]> {
           key: (data.key as string) ?? d.id,
           image: data.image as string,
           label: data.label as string,
+          section: data.section as string | undefined,
         };
       })
     ).catch(() => []);
