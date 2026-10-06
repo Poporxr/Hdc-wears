@@ -7,7 +7,7 @@ import { categories, getCategory } from "@/lib/products";
 import { fetchProducts } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_TAGLINE } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));

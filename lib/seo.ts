@@ -73,6 +73,11 @@ export async function getSeoProduct(slug: string): Promise<SeoProduct | null> {
 
 /** List all product slugs for the sitemap. */
 export async function listSeoProductSlugs(): Promise<string[]> {
+  return (await listSeoProducts()).map((p) => p.slug);
+}
+
+/** List products with their primary image for a rich sitemap. */
+export async function listSeoProducts(): Promise<{ slug: string; image: string }[]> {
   try {
     if (!PROJECT_ID || !API_KEY) return [];
     const res = await fetch(
@@ -81,9 +86,11 @@ export async function listSeoProductSlugs(): Promise<string[]> {
     );
     if (!res.ok) return [];
     const j = await res.json();
-    return ((j.documents || []) as any[]).map((d) =>
-      (d.name as string).split("/").pop()
-    ).filter(Boolean) as string[];
+    return ((j.documents || []) as any[]).map((d) => {
+      const slug = (d.name as string).split("/").pop() || "";
+      const p = toSeoProduct(slug, d.fields);
+      return { slug, image: p.image };
+    }).filter((p) => p.slug);
   } catch {
     return [];
   }

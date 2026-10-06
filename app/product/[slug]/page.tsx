@@ -9,7 +9,7 @@ import {
   productJsonLd,
 } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   const products = await fetchProducts().catch(() => []);
@@ -26,7 +26,9 @@ export async function generateMetadata({
   if (!p) return { title: "Product" };
 
   const title = p.name;
-  const description = `${p.name} — ${naira(p.price)}. ${p.description.slice(0, 120)}`;
+  const stockNote = p.inStock ? "In stock" : "Currently out of stock";
+  const colorNote = p.color ? ` in ${p.color}` : "";
+  const description = `${p.name}${colorNote} — ${naira(p.price)}. ${stockNote}. ${(p.description || "").slice(0, 140)}`.trim();
   const url = `${SITE_URL}/product/${slug}`;
 
   return {
