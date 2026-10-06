@@ -48,8 +48,9 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   icons: {
-    icon: "/icon.png",
-    apple: "/apple-icon.png",
+    icon: "https://res.cloudinary.com/doc3mb9if/image/upload/v1791299760/hdc-wears/logo/favicon.png",
+    apple:
+      "https://res.cloudinary.com/doc3mb9if/image/upload/v1791299762/hdc-wears/logo/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
