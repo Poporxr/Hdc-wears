@@ -107,7 +107,7 @@ export default function Header() {
 
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none" aria-label="HDC Wears home">
             <img
-              src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black.png"
+              src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black-v10.png"
               alt="HDC Wears"
               className="h-11 w-auto"
             />
@@ -190,7 +190,7 @@ export default function Header() {
           <aside className="absolute left-0 top-0 h-full w-[78%] max-w-xs bg-white shadow-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <img
-                src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black.png"
+                src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black-v10.png"
                 alt="HDC Wears"
                 className="h-12 w-auto"
               />

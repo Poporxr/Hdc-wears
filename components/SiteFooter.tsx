@@ -32,7 +32,7 @@ export default function SiteFooter() {
       <div className="px-6 py-10 max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
           <img
-            src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-white.png"
+            src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-white-v10.png"
             alt="HDC Wears"
             className="h-14 w-auto"
           />
