@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { friendlyAuthError, useAuth } from "@/lib/auth";
+import { useToast } from "@/components/toast";
 
 function IconEye() {
   return (
@@ -27,14 +30,49 @@ const inputCls =
   "w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm outline-none focus:border-black placeholder:text-neutral-400";
 
 export default function SignupPage() {
+  const { signUpWithEmail } = useAuth();
+  const toast = useToast();
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password should be at least 6 characters.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await signUpWithEmail(name.trim(), email.trim(), phone.trim(), password);
+      toast({ title: "Account created. Welcome to HDC Wears", variant: "success" });
+      router.push("/");
+    } catch (err) {
+      setError(friendlyAuthError(err));
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
       <div className="text-center pt-10 pb-6">
-        <span className="font-black text-3xl tracking-tight">HDC</span>
-        <span className="block text-xs font-bold tracking-[0.35em] -mt-0.5">— WEARS —</span>
+        <img
+          src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black-v10.png"
+          alt="HDC Wears"
+          className="mx-auto w-40 h-auto"
+        />
       </div>
       <div className="mx-4 bg-white rounded-2xl shadow-sm p-6 max-w-md w-[calc(100%-2rem)] sm:mx-auto mb-10">
         <div className="flex items-center gap-4 mb-6">
@@ -49,16 +87,48 @@ export default function SignupPage() {
           <span className="text-xs text-neutral-400 font-semibold">OR</span>
           <span className="flex-1 h-px bg-neutral-200" />
         </div>
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <input type="text" required placeholder="Name*" className={inputCls} />
-          <input type="email" required placeholder="Email*" className={inputCls} />
-          <input type="tel" required placeholder="Phone Number*" className={inputCls} />
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 mb-4">
+            {error}
+          </p>
+        )}
+        <form className="space-y-4" onSubmit={submit}>
+          <input
+            type="text"
+            required
+            placeholder="Name*"
+            className={inputCls}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+          />
+          <input
+            type="email"
+            required
+            placeholder="Email*"
+            className={inputCls}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+          <input
+            type="tel"
+            required
+            placeholder="Phone Number*"
+            className={inputCls}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            autoComplete="tel"
+          />
           <div className="relative">
             <input
               type={showPw ? "text" : "password"}
               required
               placeholder="Password*"
               className={`${inputCls} pr-11`}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -75,6 +145,9 @@ export default function SignupPage() {
               required
               placeholder="Confirm Password*"
               className={`${inputCls} pr-11`}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
             />
             <button
               type="button"
@@ -87,9 +160,10 @@ export default function SignupPage() {
           </div>
           <button
             type="submit"
-            className="w-full bg-black text-white font-bold tracking-wide py-3.5 rounded-lg hover:opacity-90"
+            disabled={busy}
+            className="w-full bg-black text-white font-bold tracking-wide py-3.5 rounded-lg hover:opacity-90 disabled:opacity-60"
           >
-            CREATE ACCOUNT
+            {busy ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
           </button>
         </form>
         <p className="text-center text-sm mt-5 text-neutral-600">
