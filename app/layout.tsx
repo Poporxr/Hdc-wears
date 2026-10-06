@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "HDC Wears",
     "High Dream Chasers",
     "Nigerian streetwear",
-    "Lagos fashion",
+    "Benue fashion",
     "bandana tee",
     "streetwear Nigeria",
     "buy clothes online Nigeria",

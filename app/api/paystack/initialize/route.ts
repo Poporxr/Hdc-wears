@@ -6,8 +6,6 @@ import {
 } from "@/lib/paystack";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { fsUpdate, hasServerAccess } from "@/lib/firebase-admin";
-import { sendEmail } from "@/lib/server-email";
-import { formatPrice } from "@/lib/products";
 
 /**
  * POST /api/paystack/initialize
@@ -18,7 +16,7 @@ import { formatPrice } from "@/lib/products";
  *  1. Recompute the total from live Firestore prices (tamper-proof).
  *  2. Initialize the Paystack transaction (unique ref per order+attempt).
  *  3. Store the Paystack ref on the order (server-side, via service account).
- *  4. Send the "order received" email immediately.
+ *  4. Hand off to Paystack without sending an unpaid-order reminder email.
  *
  * Requires PAYSTACK_SECRET_KEY + FIREBASE_SERVICE_ACCOUNT. Fails closed
  * when either is missing — no insecure fallback.
@@ -101,45 +99,6 @@ export async function POST(req: NextRequest) {
         await fsUpdate("orders", orderId, { deliveryId });
       }
     } catch {}
-
-    // Order-received email (immediate), with real order details.
-    let customerName = "there";
-    let orderItems: { name: string; qty: number; price: number }[] = [];
-    try {
-      const { fsGet } = await import("@/lib/firebase-admin");
-      const doc = await fsGet("orders", orderId);
-      const o = doc?.data as
-        | { name?: string; items?: { name: string; qty: number; price: number }[] }
-        | undefined;
-      customerName = o?.name || "there";
-      orderItems = o?.items || [];
-      try {
-        const result = await sendEmail("order_created", email, {
-          name: customerName,
-          orderId,
-          items: orderItems.map((i) => ({
-            name: i.name,
-            qty: i.qty,
-            price: formatPrice(i.price * i.qty),
-          })),
-          total: formatPrice(total),
-        });
-        console.log(
-          `[paystack/initialize] order-created email sent to ${email}`,
-          result.ids
-        );
-      } catch (err) {
-        console.error(
-          `[paystack/initialize] order-created email FAILED for order ${orderId}:`,
-          err
-        );
-      }
-    } catch (err) {
-      console.error(
-        `[paystack/initialize] order lookup failed for order ${orderId}:`,
-        err
-      );
-    }
 
     return NextResponse.json({
       ok: true,

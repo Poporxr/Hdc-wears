@@ -2,12 +2,12 @@
  *  and JSON-LD schema builders. */
 
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://hdc-wears.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://highdreamchasers.com.ng";
 
 export const SITE_NAME = "HDC Wears";
 export const SITE_TAGLINE =
   "Quality everyday pieces designed for comfort, confidence, and clean personal style.";
-export const SITE_DESCRIPTION = `${SITE_NAME} — High Dream Chasers. ${SITE_TAGLINE} Shop the HDC Bandana Tee collection. Lagos, Nigeria.`;
+export const SITE_DESCRIPTION = `${SITE_NAME} — High Dream Chasers. ${SITE_TAGLINE} Shop the HDC Bandana Tee collection. Benue, Nigeria.`;
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "";
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
@@ -105,7 +105,7 @@ export function organizationJsonLd() {
     description: SITE_DESCRIPTION,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Lagos",
+      addressLocality: "Benue",
       addressCountry: "NG",
     },
     sameAs: [],

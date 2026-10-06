@@ -153,12 +153,41 @@ async function fsFetch(path: string, init?: RequestInit) {
 export async function fsGet(
   collection: string,
   id: string
-): Promise<{ id: string; data: Record<string, any> } | null> {
+): Promise<{ id: string; data: Record<string, any>; updateTime?: string } | null> {
   try {
     const j = await fsFetch(`/${collection}/${id}`);
-    return { id, data: fromFsFields(j.fields) };
+    return { id, data: fromFsFields(j.fields), updateTime: j.updateTime };
   } catch (err) {
     if (String(err).includes("Firestore error 404")) return null;
+    throw err;
+  }
+}
+
+/** Atomically claim an unset boolean field using Firestore's updateTime precondition. */
+export async function fsClaimBoolean(
+  collection: string,
+  id: string,
+  field: string
+): Promise<boolean> {
+  const doc = await fsGet(collection, id);
+  if (!doc || doc.data[field] === true || !doc.updateTime) return false;
+
+  const path = `/${collection}/${id}?updateMask.fieldPaths=${encodeURIComponent(field)}&currentDocument.updateTime=${encodeURIComponent(doc.updateTime)}`;
+  try {
+    await fsFetch(path, {
+      method: "PATCH",
+      body: JSON.stringify({ fields: { [field]: { booleanValue: true } } }),
+    });
+    return true;
+  } catch (err) {
+    // Another callback/webhook changed the document after our read. It owns
+    // the notification claim, so this invocation must not send a duplicate.
+    if (
+      String(err).includes("Firestore error 400") ||
+      String(err).includes("Firestore error 409")
+    ) {
+      return false;
+    }
     throw err;
   }
 }

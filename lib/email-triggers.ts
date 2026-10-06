@@ -33,7 +33,7 @@ export async function onProductCreated(product: Product, notify: boolean) {
       imageUrl: product.images[0]
         ? cl(product.images[0].replace(/^.*hdc-wears\//, ""), "f_auto,q_auto,w_800")
         : undefined,
-      ctaUrl: `https://hdc-wears.vercel.app/product/${product.slug}`,
+      ctaUrl: `https://highdreamchasers.com.ng/product/${product.slug}`,
     });
   } catch {}
 }
@@ -59,7 +59,7 @@ export async function onProductBackInStock(product: Product) {
       imageUrl: product.images[0]
         ? cl(product.images[0].replace(/^.*hdc-wears\//, ""), "f_auto,q_auto,w_800")
         : undefined,
-      productUrl: `https://hdc-wears.vercel.app/product/${product.slug}`,
+      productUrl: `https://highdreamchasers.com.ng/product/${product.slug}`,
     });
   } catch {}
 }

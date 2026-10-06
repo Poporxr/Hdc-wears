@@ -16,7 +16,7 @@ export function paystackSecret(): string {
 
 export function siteUrl(): string {
   return (
-    process.env.NEXT_PUBLIC_SITE_URL || "https://hdc-wears.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://highdreamchasers.com.ng"
   ).replace(/\/$/, "");
 }
 
@@ -140,7 +140,7 @@ export async function confirmPaidOrder(
   reason?: string;
   emailSent?: boolean;
 }> {
-  const { fsGet, fsUpdate } = await import("./firebase-admin");
+  const { fsGet, fsUpdate, fsClaimBoolean } = await import("./firebase-admin");
   const { sendEmail } = await import("./server-email");
   const { formatPrice } = await import("./products");
 
@@ -206,38 +206,56 @@ export async function confirmPaidOrder(
   // swallowed: a paid customer must get this email.
   let emailSent = o.confirmationEmailSent === true;
   if (!emailSent && o.email) {
-    try {
-      const result = await sendEmail("order_confirmation", o.email, {
-        name: o.name || "there",
-        orderId,
-        items: (o.items || []).map((i) => ({
-          name: i.name,
-          qty: i.qty,
-          price: formatPrice(i.price * i.qty),
-        })),
-        total: formatPrice(o.total || 0),
-      });
+    const emailClaimed = await fsClaimBoolean(
+      "orders",
+      orderId,
+      "confirmationEmailClaimed"
+    );
+    if (!emailClaimed) {
       console.log(
-        `[confirmPaidOrder] confirmation email sent to ${o.email}`,
-        result.ids
+        `[confirmPaidOrder] confirmation email already claimed for order ${orderId}`
       );
-      emailSent = true;
-      // Marker so the callback page knows not to fire its backup email.
+    } else {
       try {
-        await fsUpdate("orders", orderId, { confirmationEmailSent: true });
-      } catch (markErr) {
-        console.error(
-          `[confirmPaidOrder] could not mark email sent for ${orderId}:`,
-          markErr
+        const result = await sendEmail("order_confirmation", o.email, {
+          name: o.name || "there",
+          orderId,
+          items: (o.items || []).map((i) => ({
+            name: i.name,
+            qty: i.qty,
+            price: formatPrice(i.price * i.qty),
+          })),
+          total: formatPrice(o.total || 0),
+        });
+        console.log(
+          `[confirmPaidOrder] confirmation email sent to ${o.email}`,
+          result.ids
         );
+        emailSent = true;
+        try {
+          await fsUpdate("orders", orderId, { confirmationEmailSent: true });
+        } catch (markErr) {
+          console.error(
+            `[confirmPaidOrder] could not mark email sent for ${orderId}:`,
+            markErr
+          );
+        }
+      } catch (err) {
+        console.error(
+          `[confirmPaidOrder] confirmation email FAILED for order ${orderId}:`,
+          err
+        );
+        try {
+          await fsUpdate("orders", orderId, { confirmationEmailClaimed: false });
+        } catch (releaseErr) {
+          console.error(
+            `[confirmPaidOrder] could not release email claim for ${orderId}:`,
+            releaseErr
+          );
+        }
       }
-    } catch (err) {
-      console.error(
-        `[confirmPaidOrder] confirmation email FAILED for order ${orderId}:`,
-        err
-      );
     }
-  } else {
+  } else if (!o.email) {
     console.error(
       `[confirmPaidOrder] no email on order ${orderId} — confirmation email skipped`
     );

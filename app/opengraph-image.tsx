@@ -66,7 +66,7 @@ export default async function OgImage() {
             fontFamily: "Helvetica, Arial, sans-serif",
           }}
         >
-          High Dream Chasers · Lagos, Nigeria
+          High Dream Chasers · Benue, Nigeria
         </div>
       </div>
     ),

@@ -77,7 +77,7 @@ export async function notifyAdminsOfPaidOrderIfNeeded(
 
   try {
     const { formatPrice } = await import("./products");
-    const operatorUrl = "https://hdc-wears.vercel.app/operator";
+    const operatorUrl = "https://highdreamchasers.com.ng/operator";
     const itemLines = (order.items || []).map(
       (i) => `- ${i.name} x${i.qty}${i.size ? ` (${i.size})` : ""}`
     );

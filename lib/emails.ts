@@ -16,8 +16,8 @@ ${body}
 </td></tr>
 <tr><td align="center" style="padding:24px 32px 36px;">
 <div style="border-top:1px solid #eee;padding-top:20px;">
-<p style="font-size:11px;color:#999;margin:0;">High Dream Chasers · Lagos, Nigeria</p>
-<p style="font-size:11px;color:#999;margin:6px 0 0;"><a href="https://hdc-wears.vercel.app" style="color:#000;text-decoration:underline;">hdc-wears.vercel.app</a></p>
+<p style="font-size:11px;color:#999;margin:0;">High Dream Chasers · Benue, Nigeria</p>
+<p style="font-size:11px;color:#999;margin:6px 0 0;"><a href="https://highdreamchasers.com.ng" style="color:#000;text-decoration:underline;">highdreamchasers.com.ng</a></p>
 </div>
 </td></tr>
 </table>
@@ -55,7 +55,7 @@ export function orderConfirmationEmail(opts: {
         P(
           `Order <strong>#${opts.orderId.slice(0, 8).toUpperCase()}</strong> — keep this email, it's your receipt. We'll hit you again the second it ships.`
         ) +
-        BTN("https://hdc-wears.vercel.app/orders", "TRACK YOUR ORDER") +
+        BTN("https://highdreamchasers.com.ng/orders", "TRACK YOUR ORDER") +
         `<p style="font-size:12px;color:#999;margin:16px 0 0;">P.S. When it lands, tag <strong style="color:#000;">@hdcwears</strong> — best fits get featured. 👑</p>`
     ),
   };
@@ -96,7 +96,7 @@ export function abandonedCartEmail(opts: {
       `Still thinking it over, ${opts.name}?`,
       P("Your cart is waiting. These pieces won't restock forever.") +
         `<div style="margin:16px 0;">${thumbs}</div>` +
-        BTN("https://hdc-wears.vercel.app/cart", "BACK TO CART")
+        BTN("https://highdreamchasers.com.ng/cart", "BACK TO CART")
     ),
   };
 }
@@ -108,7 +108,7 @@ export function welcomeEmail(opts: { name: string }) {
       `Welcome${opts.name ? `, ${opts.name}` : ""}.`,
       P(
         "You're officially part of HDC Wears. New drops, photoshoots, and members-only pieces — you'll hear about them first."
-      ) + BTN("https://hdc-wears.vercel.app", "START SHOPPING"),
+      ) + BTN("https://highdreamchasers.com.ng", "START SHOPPING"),
     ),
   };
 }
@@ -145,7 +145,7 @@ export function stockAlertEmail(opts: {
         `<strong>${opts.productName}</strong> was just marked out of stock on HDC Wears.`
       ) +
         P("Restock it from the operator dashboard when ready.") +
-        BTN("https://hdc-wears.vercel.app/operator", "OPEN OPERATOR"),
+        BTN("https://highdreamchasers.com.ng/operator", "OPEN OPERATOR"),
     ),
   };
 }
@@ -164,7 +164,7 @@ export function orderStatusEmail(opts: {
         P(
           `Your order <strong>${opts.orderId.slice(0, 8).toUpperCase()}</strong> is now <strong>${opts.status}</strong>. ${opts.statusCopy}`
         ) +
-        BTN("https://hdc-wears.vercel.app/orders", "VIEW ORDER"),
+        BTN("https://highdreamchasers.com.ng/orders", "VIEW ORDER"),
     ),
   };
 }

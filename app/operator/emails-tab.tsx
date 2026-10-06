@@ -42,7 +42,7 @@ export default function EmailsTab() {
             title,
             copy,
             imageUrl: imageUrl.trim() || undefined,
-            ctaUrl: "https://hdc-wears.vercel.app/#shop",
+            ctaUrl: "https://highdreamchasers.com.ng/#shop",
           },
         }),
       });
