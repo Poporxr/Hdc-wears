@@ -155,17 +155,18 @@ export async function confirmPaidOrder(
     items?: { name: string; qty: number; price: number; size?: string }[];
     total?: number;
     expiresAt?: number;
+    confirmationEmailSent?: boolean;
+    paidOrderTelegramSent?: boolean;
   };
 
-  // Payment already recorded — idempotent no-op (webhook + callback both fire).
-  if (o.paymentStatus === "paid") {
-    return { confirmed: true, already: true };
-  }
+  // A repeated Paystack callback/webhook must retry notifications that failed
+  // on the first attempt. Successful sends are recorded on the order below.
+  const already = o.paymentStatus === "paid";
 
   const status = o.status || "pending";
 
   // Pending orders get the full checks: expiry + amount match.
-  if (status === "pending") {
+  if (!already && status === "pending") {
     if (o.expiresAt && Date.now() > o.expiresAt) {
       await fsUpdate("orders", orderId, {
         status: "cancelled",
@@ -190,7 +191,7 @@ export async function confirmPaidOrder(
       paymentStatus: "paid",
       paidAt: opts.paidAt || new Date().toISOString(),
     });
-  } else {
+  } else if (!already) {
     // Order already moved past pending (e.g. admin acted first) but Paystack
     // reports success: record the payment, keep the fulfillment status as-is.
     // The money moved — the customer gets their confirmation either way.
@@ -203,8 +204,8 @@ export async function confirmPaidOrder(
   // Confirmation email — the customer paid, they hear about it.
   // Runs on the single shared email service. Failures are logged, never
   // swallowed: a paid customer must get this email.
-  let emailSent = false;
-  if (o.email) {
+  let emailSent = o.confirmationEmailSent === true;
+  if (!emailSent && o.email) {
     try {
       const result = await sendEmail("order_confirmation", o.email, {
         name: o.name || "there",
@@ -244,17 +245,31 @@ export async function confirmPaidOrder(
 
   // Telegram admin ping — same pattern as firstbookings: fires on the
   // first (and only the first) successful confirmation.
-  const { notifyAdminsOfPaidOrderIfNeeded } = await import("./telegram");
-  await notifyAdminsOfPaidOrderIfNeeded({
-    id: orderId,
-    name: o.name,
-    email: o.email,
-    phone: o.phone,
-    items: o.items,
-    total: o.total,
-  });
+  let telegramSent = o.paidOrderTelegramSent === true;
+  if (!telegramSent) {
+    const { notifyAdminsOfPaidOrderIfNeeded } = await import("./telegram");
+    const telegramResult = await notifyAdminsOfPaidOrderIfNeeded({
+      id: orderId,
+      name: o.name,
+      email: o.email,
+      phone: o.phone,
+      items: o.items,
+      total: o.total,
+    });
+    telegramSent = telegramResult.sent;
+    if (telegramSent) {
+      try {
+        await fsUpdate("orders", orderId, { paidOrderTelegramSent: true });
+      } catch (markErr) {
+        console.error(
+          `[confirmPaidOrder] could not mark Telegram sent for ${orderId}:`,
+          markErr
+        );
+      }
+    }
+  }
 
-  return { confirmed: true, emailSent };
+  return { confirmed: true, already, emailSent };
 }
 
 /** Mark a pending order failed server-side (payment failed / expired). */

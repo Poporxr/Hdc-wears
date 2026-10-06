@@ -59,17 +59,21 @@ export type PaidOrderSummary = {
 };
 
 /**
- * Notify admins that a paid order just confirmed. Idempotency comes from
- * the caller: confirmPaidOrder only reaches here on the first successful
- * confirmation (later calls early-return on paymentStatus === "paid").
- * Missing env config skips silently — Telegram is a notification, never
- * a blocker. Failures are logged, never thrown.
+ * Notify admins that a paid order just confirmed. The caller records a
+ * successful send so later payment callbacks can retry when delivery fails.
+ * Missing env config skips Telegram, and failures are logged without blocking
+ * the payment confirmation.
  */
 export async function notifyAdminsOfPaidOrderIfNeeded(
   order: PaidOrderSummary
 ): Promise<{ sent: boolean; skipped: boolean }> {
   const config = getTelegramConfig();
-  if (!config) return { sent: false, skipped: true };
+  if (!config) {
+    console.error(
+      "[telegram] paid-order notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_ADMIN_CHAT_ID is missing"
+    );
+    return { sent: false, skipped: true };
+  }
 
   try {
     const { formatPrice } = await import("./products");
