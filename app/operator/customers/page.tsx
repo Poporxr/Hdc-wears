@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { listCustomers } from "@/lib/admin";
-import { Table, Td, SearchInput, RowMenu, type MenuItem } from "../ui";
+import { Table, Td, SearchInput, RowMenu, ListSkeleton, type MenuItem } from "../ui";
 
 type Customer = {
   uid: string;
@@ -41,7 +41,12 @@ export default function CustomersPage() {
       : [];
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading customers...</p>;
+    return (
+      <div>
+        <h2 className="text-xl font-black tracking-tight mb-5">CUSTOMERS</h2>
+        <ListSkeleton rows={6} />
+      </div>
+    );
   }
 
   return (

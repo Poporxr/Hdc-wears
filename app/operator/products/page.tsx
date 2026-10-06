@@ -11,7 +11,7 @@ import {
 } from "@/lib/email-triggers";
 import { formatPrice, type Product } from "@/lib/products";
 import { useToast } from "@/components/toast";
-import { Switch, Table, Td, RowMenu, type MenuItem } from "../ui";
+import { Switch, Table, Td, RowMenu, ListSkeleton, type MenuItem } from "../ui";
 
 export default function ProductsPage() {
   const toast = useToast();
@@ -82,7 +82,12 @@ export default function ProductsPage() {
       : cl(`products/${p.color.toLowerCase()}-front`, "f_auto,q_auto,w_200");
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading products...</p>;
+    return (
+      <div>
+        <h2 className="text-xl font-black tracking-tight mb-5">PRODUCTS</h2>
+        <ListSkeleton rows={6} />
+      </div>
+    );
   }
 
   return (

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { fetchProducts } from "@/lib/db";
 import { listOrders, listCustomers } from "@/lib/admin";
 import { formatPrice } from "@/lib/products";
-import { StatCard, Bars, Donut, SectionLabel } from "./ui";
+import { StatCard, Bars, Donut, SectionLabel, PageLoader } from "./ui";
 
 type OrderRow = {
   id: string;
@@ -94,7 +94,7 @@ export default function OperatorOverview() {
   }, []);
 
   if (!stats) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading stats...</p>;
+    return <PageLoader label="Loading stats..." />;
   }
 
   return (
@@ -136,7 +136,7 @@ export default function OperatorOverview() {
         <Link href="/operator/deliveries" className="block">
           <StatCard
             label="DELIVERIES"
-            value="Manage →"
+            value="Manage ›"
             delta="track fulfillment"
           />
         </Link>

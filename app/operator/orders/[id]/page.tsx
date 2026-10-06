@@ -12,6 +12,7 @@ import {
   orderPill,
   SectionLabel,
   StatusModal,
+  DetailSkeleton,
 } from "../../ui";
 import {
   verifyOrderPayment,
@@ -65,7 +66,7 @@ export default function OrderDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading order...</p>;
+    return <DetailSkeleton />;
   }
   if (!order) {
     return (
@@ -287,7 +288,7 @@ export default function OrderDetailPage() {
             <span className="text-sm font-bold">
               {(STATUS_LABELS[o.status || "pending"] || o.status)?.toUpperCase()}
             </span>
-            <span className="text-xs font-bold text-neutral-400">CHANGE →</span>
+            <span className="text-xs font-bold text-neutral-400">UPDATE ›</span>
           </button>
         )}
         {unpaid && !terminal && (

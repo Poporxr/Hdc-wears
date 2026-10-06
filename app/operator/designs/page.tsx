@@ -9,7 +9,7 @@ import {
   type DesignRequest,
 } from "@/lib/admin";
 import { useToast } from "@/components/toast";
-import { RowMenu, type MenuItem } from "../ui";
+import { RowMenu, ListSkeleton, type MenuItem } from "../ui";
 
 const STATUS_STYLES: Record<DesignRequest["status"], string> = {
   new: "bg-white text-black",
@@ -70,9 +70,10 @@ export default function DesignsPage() {
 
   if (loading) {
     return (
-      <p className="animate-pulse text-neutral-500 text-sm">
-        Loading design requests...
-      </p>
+      <div>
+        <h2 className="text-xl font-black tracking-tight mb-5">CUSTOM DESIGNS</h2>
+        <ListSkeleton rows={4} />
+      </div>
     );
   }
 

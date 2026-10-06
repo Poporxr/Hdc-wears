@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { listDeliveries, updateDeliveryStatus } from "@/lib/admin";
 import { useToast } from "@/components/toast";
 import { formatPrice } from "@/lib/products";
-import { SectionLabel, Segmented } from "../../ui";
+import { SectionLabel, Segmented, DetailSkeleton } from "../../ui";
 import { deliveryPill, DELIVERY_STEPS, type Delivery } from "../page";
 
 export default function DeliveryDetailPage() {
@@ -39,7 +39,7 @@ export default function DeliveryDetailPage() {
   };
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading delivery...</p>;
+    return <DetailSkeleton />;
   }
   if (!delivery) {
     return (

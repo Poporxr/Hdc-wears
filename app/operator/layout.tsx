@@ -61,7 +61,7 @@ function OperatorShell({ children }: { children: React.ReactNode }) {
             href="/"
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-neutral-400 hover:text-white hover:bg-neutral-900"
           >
-            <span className="w-5 text-center">→</span>
+            <span className="w-5 text-center">›</span>
             View store
           </Link>
           <button

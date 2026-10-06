@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { listDeliveries, updateDeliveryStatus } from "@/lib/admin";
 import { useToast } from "@/components/toast";
 import { formatPrice } from "@/lib/products";
-import { Pill, Table, Td, RowMenu, type MenuItem } from "../ui";
+import { Pill, Table, Td, RowMenu, ListSkeleton, type MenuItem } from "../ui";
 
 export type Delivery = {
   id: string;
@@ -82,7 +82,12 @@ export default function DeliveriesPage() {
   };
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading deliveries...</p>;
+    return (
+      <div>
+        <h2 className="text-xl font-black tracking-tight mb-5">DELIVERIES</h2>
+        <ListSkeleton rows={4} />
+      </div>
+    );
   }
 
   return (
@@ -151,7 +156,7 @@ export default function DeliveriesPage() {
                           disabled={busy}
                           className="text-[11px] font-bold px-3 py-2 rounded-lg bg-white text-black disabled:opacity-50"
                         >
-                          {next.label.toUpperCase()} →
+                          {next.label.toUpperCase()} ›
                         </button>
                       )}
                     </div>

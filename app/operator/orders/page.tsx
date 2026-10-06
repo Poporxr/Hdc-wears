@@ -16,6 +16,7 @@ import {
   Pagination,
   RowMenu,
   StatusModal,
+  ListSkeleton,
   type MenuItem,
 } from "../ui";
 import {
@@ -123,7 +124,7 @@ function useOrderQuickActions(
       items.push({ label: "Verify payment", onClick: () => verify(o) });
       items.push({ label: "Mark as paid", onClick: () => markPaid(o) });
     }
-    items.push({ label: "Change status…", onClick: () => onStatusModal(o) });
+    items.push({ label: "Update status…", onClick: () => onStatusModal(o) });
     return items;
   };
 
@@ -186,7 +187,12 @@ export default function OrdersPage() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading orders...</p>;
+    return (
+      <div>
+        <h2 className="text-xl font-black tracking-tight mb-5">ORDERS</h2>
+        <ListSkeleton rows={6} />
+      </div>
+    );
   }
 
   return (
@@ -293,27 +299,56 @@ export default function OrdersPage() {
                       #{o.id.slice(0, 8).toUpperCase()}
                     </p>
                     <p className="text-xs text-neutral-500 mt-0.5">
-                      {o.name || "No name"}
                       {o.createdAt
-                        ? ` · ${new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}`
+                        ? new Date(o.createdAt).toLocaleString("en-NG", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                         : ""}
                     </p>
                   </Link>
                   <RowMenu items={menuItems(o)} label={`Actions for order ${o.id.slice(0, 8)}`} />
                 </div>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {paymentPill(o.paymentStatus)}
-                    {orderPill(o.status)}
-                    {isExpired(o) && <Pill tone="neutral">EXP</Pill>}
+
+                <div className="mt-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold truncate">{o.name || "No name"}</p>
+                    <p className="text-sm font-black shrink-0">
+                      {o.total ? formatPrice(o.total) : "—"}
+                    </p>
                   </div>
-                  <p className="text-sm font-black shrink-0 ml-2">
-                    {o.total ? formatPrice(o.total) : "—"}
-                  </p>
+                  {o.phone && (
+                    <p className="text-xs text-neutral-500">{o.phone}</p>
+                  )}
+                  {(o.items || []).length > 0 && (
+                    <div className="pt-1">
+                      {(o.items || []).slice(0, 3).map((it, i) => (
+                        <p key={i} className="text-xs text-neutral-400 truncate">
+                          {it.qty}× {it.name || it.slug}
+                          {it.size ? ` (${it.size})` : ""}
+                        </p>
+                      ))}
+                      {(o.items || []).length > 3 && (
+                        <p className="text-xs text-neutral-600">
+                          +{(o.items || []).length - 3} more
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(o.city || o.address) && (
+                    <p className="text-xs text-neutral-500 truncate">
+                      📍 {[o.address, o.city, o.state].filter(Boolean).join(", ")}
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-neutral-500 mt-2">
-                  {o.items?.length || 0} item{(o.items?.length || 0) === 1 ? "" : "s"}
-                </p>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-neutral-800">
+                  {paymentPill(o.paymentStatus)}
+                  {orderPill(o.status)}
+                  {isExpired(o) && <Pill tone="neutral">EXP</Pill>}
+                </div>
               </div>
             ))}
           </div>

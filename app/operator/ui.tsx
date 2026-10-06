@@ -8,11 +8,13 @@ export function Modal({
   onClose,
   children,
   wide,
+  centered,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   wide?: boolean;
+  centered?: boolean;
 }) {
   useEffect(() => {
     const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -25,13 +27,19 @@ export function Modal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+    <div
+      className={`fixed inset-0 z-50 flex justify-center ${
+        centered ? "items-center p-4" : "items-end md:items-center"
+      }`}
+    >
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
         onClick={onClose}
       />
       <div
-        className={`relative w-full ${wide ? "md:max-w-2xl" : "md:max-w-lg"} bg-neutral-950 border border-neutral-800 rounded-t-3xl md:rounded-3xl max-h-[92vh] overflow-y-auto`}
+        className={`relative w-full ${wide ? "md:max-w-2xl" : "md:max-w-lg"} bg-neutral-950 border border-neutral-800 ${
+          centered ? "rounded-3xl" : "rounded-t-3xl md:rounded-3xl"
+        } max-h-[92vh] overflow-y-auto`}
       >
         <div className="sticky top-0 bg-neutral-950/95 backdrop-blur border-b border-neutral-800 px-5 py-4 flex items-center justify-between">
           <h3 className="font-black tracking-tight">{title}</h3>
@@ -68,7 +76,7 @@ export function StatusModal({
   busy?: boolean;
 }) {
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal title={title} onClose={onClose} centered>
       <div className="space-y-2">
         {subtitle && <p className="text-sm text-neutral-500 mb-3">{subtitle}</p>}
         <p className="text-[11px] font-bold tracking-[0.18em] text-neutral-500 mb-1">
@@ -83,7 +91,7 @@ export function StatusModal({
           >
             <span className="text-sm font-bold">{o.label}</span>
             <span aria-hidden className="float-right text-neutral-500">
-              →
+              ›
             </span>
           </button>
         ))}
@@ -318,7 +326,7 @@ export function ActionButton({
       className={`w-full text-sm font-bold px-4 py-3 rounded-xl disabled:opacity-50 text-left flex items-center justify-between ${kinds[kind]}`}
     >
       <span>{children}</span>
-      <span aria-hidden>→</span>
+      <span aria-hidden>›</span>
     </button>
   );
 }
@@ -427,14 +435,14 @@ export function Pagination({
           onClick={() => onPage(page - 1)}
           className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-bold disabled:opacity-40"
         >
-          ← Prev
+          ‹ Prev
         </button>
         <button
           disabled={page >= totalPages}
           onClick={() => onPage(page + 1)}
           className="px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-xs font-bold disabled:opacity-40"
         >
-          Next →
+          Next ›
         </button>
       </div>
     </div>
@@ -508,8 +516,7 @@ export function RowMenu({ items, label }: { items: MenuItem[]; label?: string })
 }
 
 /* ---------- Search input ---------- */
-export function SearchInput({
-  value,
+export function SearchInput({  value,
   onChange,
   placeholder,
 }: {
@@ -524,5 +531,78 @@ export function SearchInput({
       placeholder={placeholder}
       className="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm w-full md:w-64 outline-none focus:border-neutral-500 placeholder:text-neutral-600"
     />
+  );
+}
+
+/* ---------- Spinner ---------- */
+export function Spinner({ size = 20 }: { size?: number }) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block animate-spin rounded-full border-2 border-neutral-700 border-t-white shrink-0"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+/* ---------- Full-page loader ---------- */
+export function PageLoader({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-16">
+      <Spinner size={28} />
+      <p className="text-sm text-neutral-500">{label}</p>
+    </div>
+  );
+}
+
+/* ---------- Skeleton blocks ---------- */
+function Sk({ className }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-neutral-800/80 rounded-lg ${className || ""}`} />
+  );
+}
+
+/** Skeleton for list pages: mimics cards on mobile, rows on desktop. */
+export function ListSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <Sk className="h-4 w-32" />
+            <Sk className="h-8 w-8 !rounded-full" />
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex gap-1.5">
+              <Sk className="h-6 w-16 !rounded-full" />
+              <Sk className="h-6 w-20 !rounded-full" />
+            </div>
+            <Sk className="h-4 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Skeleton for detail pages. */
+export function DetailSkeleton() {
+  return (
+    <div className="max-w-3xl space-y-4">
+      <Sk className="h-8 w-56" />
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-3">
+        <Sk className="h-4 w-40" />
+        <Sk className="h-4 w-full" />
+        <Sk className="h-4 w-2/3" />
+      </div>
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-3">
+        <Sk className="h-4 w-32" />
+        <Sk className="h-4 w-full" />
+        <Sk className="h-4 w-1/2" />
+      </div>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchProduct } from "@/lib/db";
 import { type Product } from "@/lib/products";
+import { DetailSkeleton } from "../../ui";
 import ProductForm from "../product-form";
 
 export default function EditProductPage() {
@@ -21,7 +22,7 @@ export default function EditProductPage() {
   }, [slug]);
 
   if (loading) {
-    return <p className="animate-pulse text-neutral-500 text-sm">Loading product...</p>;
+    return <DetailSkeleton />;
   }
   if (!product) {
     return (
