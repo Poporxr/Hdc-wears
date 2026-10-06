@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ---------- Modal ---------- */
 export function Modal({
@@ -46,6 +46,54 @@ export function Modal({
         <div className="p-5">{children}</div>
       </div>
     </div>
+  );
+}
+
+/* ---------- Status picker modal ---------- */
+export function StatusModal({
+  title,
+  subtitle,
+  current,
+  options,
+  onSelect,
+  onClose,
+  busy,
+}: {
+  title: string;
+  subtitle?: string;
+  current: string;
+  options: { id: string; label: string }[];
+  onSelect: (id: string) => void;
+  onClose: () => void;
+  busy?: boolean;
+}) {
+  return (
+    <Modal title={title} onClose={onClose}>
+      <div className="space-y-2">
+        {subtitle && <p className="text-sm text-neutral-500 mb-3">{subtitle}</p>}
+        <p className="text-[11px] font-bold tracking-[0.18em] text-neutral-500 mb-1">
+          CURRENT: {current.toUpperCase()}
+        </p>
+        {options.map((o) => (
+          <button
+            key={o.id}
+            disabled={busy}
+            onClick={() => onSelect(o.id)}
+            className="w-full text-left px-4 py-3.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-white hover:bg-neutral-800 transition-colors disabled:opacity-50"
+          >
+            <span className="text-sm font-bold">{o.label}</span>
+            <span aria-hidden className="float-right text-neutral-500">
+              →
+            </span>
+          </button>
+        ))}
+        {options.length === 0 && (
+          <p className="text-sm text-neutral-500">
+            No further moves allowed from this state.
+          </p>
+        )}
+      </div>
+    </Modal>
   );
 }
 
@@ -389,6 +437,72 @@ export function Pagination({
           Next →
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Row actions menu (⋮) ---------- */
+export type MenuItem = {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+};
+
+export function RowMenu({ items, label }: { items: MenuItem[]; label?: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open ]);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        aria-label={label || "Actions"}
+        className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-800 hover:text-white transition-colors"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="12" cy="19" r="1.8" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-10 z-40 w-52 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl shadow-black/60 overflow-hidden py-1.5">
+          {items.map((it, i) => (
+            <button
+              key={i}
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                it.onClick();
+              }}
+              className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors ${
+                it.danger
+                  ? "text-red-400 hover:bg-red-950/60"
+                  : "text-neutral-200 hover:bg-neutral-800"
+              }`}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,30 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import OperatorGuard from "@/components/OperatorGuard";
-import { useAuth } from "@/lib/auth";
-import { fetchProducts, fetchGallery } from "@/lib/db";
+import { fetchProducts } from "@/lib/db";
 import { listOrders, listCustomers } from "@/lib/admin";
 import { formatPrice } from "@/lib/products";
 import { StatCard, Bars, Donut, SectionLabel } from "./ui";
-import ProductsTab from "./products-tab";
-import OrdersTab from "./orders-tab";
-import DeliveriesTab from "./deliveries-tab";
-import GalleryTab from "./gallery-tab";
-import DesignsTab from "./designs-tab";
-import CustomersTab from "./customers-tab";
-import EmailsTab from "./emails-tab";
-
-const TABS = [
-  { id: "overview", label: "Overview", icon: "◧" },
-  { id: "products", label: "Products", icon: "◫" },
-  { id: "orders", label: "Orders", icon: "≡" },
-  { id: "deliveries", label: "Deliveries", icon: "▤" },
-  { id: "designs", label: "Designs", icon: "✎" },
-  { id: "gallery", label: "Gallery", icon: "▦" },
-  { id: "customers", label: "Customers", icon: "○" },
-  { id: "emails", label: "Emails", icon: "✉" },
-] as const;
 
 type OrderRow = {
   id: string;
@@ -48,7 +29,7 @@ type Stats = {
   aov: number;
 };
 
-function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
+export default function OperatorOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recent, setRecent] = useState<OrderRow[]>([]);
   const [revSeries, setRevSeries] = useState<{ label: string; value: number }[]>([]);
@@ -126,35 +107,39 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
           value={formatPrice(stats.revenue)}
           delta={`${stats.paidOrders} paid orders · AOV ${formatPrice(stats.aov)}`}
         />
-        <StatCard
-          label="AWAITING PAYMENT"
-          value={formatPrice(stats.unpaidValue)}
-          delta={`${stats.unpaidCount} unpaid orders at risk`}
-          onClick={() => setTab("orders")}
-        />
-        <StatCard
-          label="ORDERS"
-          value={String(stats.orders)}
-          delta={`${stats.failedCount} failed payments`}
-          onClick={() => setTab("orders")}
-        />
-        <StatCard
-          label="PRODUCTS"
-          value={String(stats.products)}
-          delta={
-            stats.outOfStock > 0
-              ? `${stats.outOfStock} out of stock — restock`
-              : "all in stock"
-          }
-          onClick={() => setTab("products")}
-        />
+        <Link href="/operator/orders" className="block">
+          <StatCard
+            label="AWAITING PAYMENT"
+            value={formatPrice(stats.unpaidValue)}
+            delta={`${stats.unpaidCount} unpaid orders at risk`}
+          />
+        </Link>
+        <Link href="/operator/orders" className="block">
+          <StatCard
+            label="ORDERS"
+            value={String(stats.orders)}
+            delta={`${stats.failedCount} failed payments`}
+          />
+        </Link>
+        <Link href="/operator/products" className="block">
+          <StatCard
+            label="PRODUCTS"
+            value={String(stats.products)}
+            delta={
+              stats.outOfStock > 0
+                ? `${stats.outOfStock} out of stock — restock`
+                : "all in stock"
+            }
+          />
+        </Link>
         <StatCard label="CUSTOMERS" value={String(stats.customers)} />
-        <StatCard
-          label="DELIVERIES"
-          value="Manage →"
-          delta="track fulfillment"
-          onClick={() => setTab("deliveries")}
-        />
+        <Link href="/operator/deliveries" className="block">
+          <StatCard
+            label="DELIVERIES"
+            value="Manage →"
+            delta="track fulfillment"
+          />
+        </Link>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-2.5 mt-2.5">
@@ -179,10 +164,10 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
       ) : (
         <div className="space-y-2">
           {recent.map((o) => (
-            <button
+            <Link
               key={o.id}
-              onClick={() => setTab("orders")}
-              className="w-full text-left bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 hover:border-neutral-600 transition-colors"
+              href={`/operator/orders/${o.id}`}
+              className="block bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 hover:border-neutral-600 transition-colors"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-bold font-mono">
@@ -195,113 +180,10 @@ function OverviewTab({ setTab }: { setTab: (t: string) => void }) {
                   {o.total ? formatPrice(o.total) : "—"}
                 </span>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-function OperatorInner() {
-  const [tab, setTab] = useState<string>("overview");
-  const [mobileNav, setMobileNav] = useState(false);
-  const { signOut } = useAuth();
-
-  const nav = (
-    <>
-      {TABS.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => {
-            setTab(t.id);
-            setMobileNav(false);
-          }}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold tracking-wide text-left ${
-            tab === t.id
-              ? "bg-white text-black"
-              : "text-neutral-400 hover:text-white hover:bg-neutral-900"
-          }`}
-        >
-          <span className="w-5 text-center">{t.icon}</span>
-          {t.label}
-        </button>
-      ))}
-    </>
-  );
-
-  return (
-    <div className="min-h-screen bg-black text-white md:flex">
-      {/* Sidebar — desktop */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-neutral-800 p-4 min-h-screen sticky top-0 h-screen">
-        <div className="px-2 py-4">
-          <span className="font-black text-xl tracking-tight">HDC</span>
-          <span className="block text-[10px] font-bold tracking-[0.35em] text-neutral-500">
-            OPERATOR
-          </span>
-        </div>
-        <nav className="space-y-1 mt-4 flex-1">{nav}</nav>
-        <div className="space-y-1">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-neutral-400 hover:text-white hover:bg-neutral-900"
-          >
-            <span className="w-5 text-center">→</span>
-            View store
-          </a>
-          <button
-            onClick={() => signOut()}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-neutral-400 hover:text-white hover:bg-neutral-900 text-left"
-          >
-            <span className="w-5 text-center">×</span>
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      {/* Top bar — mobile */}
-      <div className="md:hidden sticky top-0 z-30 bg-black border-b border-neutral-800">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
-            <span className="font-black text-lg tracking-tight">HDC</span>
-            <span className="text-[10px] font-bold tracking-[0.35em] text-neutral-500 ml-2">
-              OPERATOR
-            </span>
-          </div>
-          <button
-            onClick={() => setMobileNav((v) => !v)}
-            className="p-2 text-neutral-300"
-            aria-label="Menu"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-        </div>
-        {mobileNav && <nav className="px-4 pb-4 space-y-1">{nav}</nav>}
-      </div>
-
-      {/* Content */}
-      <main className="flex-1 px-4 md:px-8 py-6 md:py-8 max-w-6xl w-full">
-        {tab === "overview" && <OverviewTab setTab={setTab} />}
-        {tab === "products" && <ProductsTab />}
-        {tab === "orders" && <OrdersTab />}
-        {tab === "deliveries" && <DeliveriesTab />}
-        {tab === "designs" && <DesignsTab />}
-        {tab === "gallery" && <GalleryTab />}
-        {tab === "customers" && <CustomersTab />}
-        {tab === "emails" && <EmailsTab />}
-      </main>
-    </div>
-  );
-}
-
-export default function OperatorPage() {
-  return (
-    <OperatorGuard>
-      <OperatorInner />
-    </OperatorGuard>
   );
 }
