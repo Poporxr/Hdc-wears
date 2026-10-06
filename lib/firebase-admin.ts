@@ -102,15 +102,31 @@ function toFsFields(obj: Record<string, string | number | boolean | null>): Reco
   return fields;
 }
 
+function fromFsValue(value: Record<string, any>): any {
+  if (value.stringValue !== undefined) return value.stringValue;
+  if (value.integerValue !== undefined) return parseInt(value.integerValue, 10);
+  if (value.doubleValue !== undefined) return value.doubleValue;
+  if (value.booleanValue !== undefined) return value.booleanValue;
+  if (value.nullValue !== undefined) return null;
+  if (value.timestampValue !== undefined) return value.timestampValue;
+  if (value.referenceValue !== undefined) return value.referenceValue;
+  if (value.bytesValue !== undefined) return value.bytesValue;
+  if (value.geoPointValue !== undefined) return value.geoPointValue;
+  if (value.arrayValue !== undefined) {
+    return (value.arrayValue.values || []).map((item: Record<string, any>) =>
+      fromFsValue(item)
+    );
+  }
+  if (value.mapValue !== undefined) {
+    return fromFsFields(value.mapValue.fields || {});
+  }
+  return value;
+}
+
 function fromFsFields(fields: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
-  for (const [k, v] of Object.entries(fields || {})) {
-    if (v.stringValue !== undefined) out[k] = v.stringValue;
-    else if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue, 10);
-    else if (v.doubleValue !== undefined) out[k] = v.doubleValue;
-    else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
-    else if (v.nullValue !== undefined) out[k] = null;
-    else out[k] = v;
+  for (const [k, value] of Object.entries(fields || {})) {
+    out[k] = fromFsValue(value);
   }
   return out;
 }
