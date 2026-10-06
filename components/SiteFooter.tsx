@@ -31,10 +31,11 @@ export default function SiteFooter() {
     <footer className="bg-detta-navy text-white rounded-t-3xl mt-16">
       <div className="px-6 py-10 max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <span className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center font-black text-sm">
-            DW
-          </span>
-          <span className="font-black tracking-[0.25em] text-lg">HDCWEARS</span>
+          <img
+            src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-white.png"
+            alt="HDC Wears"
+            className="h-14 w-auto"
+          />
         </div>
         <p className="text-white/80 text-sm leading-relaxed max-w-md">
           Quality everyday pieces designed for comfort, confidence, and clean

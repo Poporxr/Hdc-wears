@@ -105,9 +105,12 @@ export default function Header() {
             </nav>
           </div>
 
-          <Link href="/" className="absolute left-1/2 -translate-x-1/2 text-center leading-none select-none">
-            <span className="block font-black tracking-tight text-2xl">HDC</span>
-            <span className="block text-[11px] font-bold tracking-[0.35em] -mt-0.5">— WEARS —</span>
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 select-none" aria-label="HDC Wears home">
+            <img
+              src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black.png"
+              alt="HDC Wears"
+              className="h-11 w-auto"
+            />
           </Link>
 
           <div className="flex items-center gap-3">
@@ -179,17 +182,18 @@ export default function Header() {
 
       {/* Mobile drawer */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 text-neutral-900">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setDrawerOpen(false)}
           />
           <aside className="absolute left-0 top-0 h-full w-[78%] max-w-xs bg-white shadow-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-8">
-              <span className="font-black text-xl leading-none text-center">
-                HDC
-                <span className="block text-[10px] tracking-[0.35em]">— WEARS —</span>
-              </span>
+              <img
+                src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black.png"
+                alt="HDC Wears"
+                className="h-12 w-auto"
+              />
               <button aria-label="Close menu" onClick={() => setDrawerOpen(false)}>
                 <IconClose />
               </button>
@@ -212,7 +216,7 @@ export default function Header() {
 
       {/* Search overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 text-neutral-900">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setSearchOpen(false)}
