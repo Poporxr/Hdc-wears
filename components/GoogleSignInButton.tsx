@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { useToast } from "@/components/toast";
 
 function IconGoogle() {
@@ -39,9 +40,9 @@ export default function GoogleSignInButton({ label }: { label: string }) {
     setBusy(true);
     setError("");
     try {
-      await signInWithGoogle();
+      const signedInEmail = await signInWithGoogle();
       toast({ title: "Welcome to HDC Wears", variant: "success" });
-      router.push("/");
+      router.push(isAdminEmail(signedInEmail) ? "/operator" : "/");
     } catch (e) {
       setError("Google sign-in failed. Try again.");
       toast({

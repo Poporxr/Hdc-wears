@@ -38,14 +38,14 @@ type AuthContextValue = {
   user: FirebaseUser | null;
   profile: UserProfile | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<string | null>;
   signUpWithEmail: (
     name: string,
     email: string,
     phone: string,
     password: string
-  ) => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
+  ) => Promise<string | null>;
+  signInWithEmail: (email: string, password: string) => Promise<string | null>;
   sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   saveProfile: (data: Partial<Pick<UserProfile, "name" | "phone">>) => Promise<void>;
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(auth, provider);
     setProfile(await ensureUserDoc(cred.user));
+    return cred.user.email;
   }, []);
 
   const signUpWithEmail = useCallback(
@@ -143,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
       setProfile(await ensureUserDoc(cred.user, { name, phone }));
+      return cred.user.email;
     },
     []
   );
@@ -152,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!auth) throw new Error("Firebase not configured");
       const cred = await signInWithEmailAndPassword(auth, email, password);
       setProfile(await ensureUserDoc(cred.user));
+      return cred.user.email;
     },
     []
   );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { friendlyAuthError, useAuth } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { useToast } from "@/components/toast";
 
 function IconEye() {
@@ -46,9 +47,9 @@ export default function LoginPage() {
     setError("");
     setResetSent(false);
     try {
-      await signInWithEmail(email.trim(), password);
+      const signedInEmail = await signInWithEmail(email.trim(), password);
       toast({ title: "Welcome back", variant: "success" });
-      router.push("/");
+      router.push(isAdminEmail(signedInEmail) ? "/operator" : "/");
     } catch (err) {
       setError(friendlyAuthError(err));
       setBusy(false);
