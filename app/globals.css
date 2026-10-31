@@ -166,3 +166,42 @@ body {
 .animate-needle-glow {
   animation: needle-glow 1.6s ease-in-out infinite;
 }
+
+/* Gallery v2: scroll reveals + opener slow zoom (feat/client-photos-preview) */
+.gv-reveal {
+  opacity: 0;
+  transform: translateY(34px);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gv-reveal.gv-in {
+  opacity: 1;
+  transform: none;
+}
+.gv-rot {
+  rotate: -1.4deg;
+}
+@keyframes gv-zoom {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: scale(1.02);
+  }
+}
+.gv-zoom {
+  animation: gv-zoom 7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Preview stills: ?still freezes reveals/animations for screenshots */
+html.still .gv-reveal {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+html.still .animate-hero-in-right,
+html.still .gv-zoom,
+html.still .animate-marquee {
+  animation: none !important;
+}

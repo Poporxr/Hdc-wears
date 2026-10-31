@@ -31,25 +31,25 @@ function isWorld(g: GalleryImage) {
   return !g.section || g.section === "world";
 }
 
-export default function GallerySection() {
-  const [images, setImages] = useState<GalleryImage[]>([]);
-  useEffect(() => {
-    fetchGallery()
-      .then(setImages)
-      .catch(() => setImages([]));
-  }, []);
+const DISPLAY_PREVIEW = [
+  { key: "IMG_2306", label: "The Pairing, studio" },
+  { key: "IMG_2465", label: "Two Fronts, studio" },
+  { key: "IMG_2474", label: "Surrounded, studio" },
+  { key: "IMG_2349", label: "Over the Shoulder, studio" },
+];
 
-  const shown = images.filter(isWorld).slice(0, 4);
+export default function GallerySection() {
+  const shown = DISPLAY_PREVIEW;
 
   return (
     <section className="mt-16 -mx-4 md:mx-0">
       <div className="px-4 md:px-0 flex items-end justify-between mb-6">
         <div>
           <p className="text-xs font-bold tracking-[0.25em] text-neutral-400 mb-2">
-            SHOT BY THE COMMUNITY
+            FROM THE SHOOT
           </p>
           <h2 className="font-display font-black text-2xl md:text-3xl tracking-tight">
-            HDC WORLD
+            ON DISPLAY
           </h2>
         </div>
         <Link
@@ -60,31 +60,19 @@ export default function GallerySection() {
         </Link>
       </div>
       <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory px-4 md:px-0 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {shown.length === 0
-          ? [0, 1, 2, 3].map((i) => (
-              <div key={i} className="snap-start shrink-0 w-[62vw] md:w-[31%]">
-                <Skeleton />
-              </div>
-            ))
-          : shown.map((g) => (
-              <div
-                key={g.key}
-                className="snap-start shrink-0 w-[62vw] md:w-[31%] first:rounded-l-xl last:rounded-r-xl md:rounded-xl overflow-hidden"
-              >
-                <Tile
-                  image={cl(
-                    `gallery/${g.key}`,
-                    "f_auto,q_auto,w_600"
-                  )}
-                  label={g.label}
-                />
-              </div>
-            ))}
+        {shown.map((g) => (
+          <div
+            key={g.key}
+            className="snap-start shrink-0 w-[62vw] md:w-[31%] first:rounded-l-xl last:rounded-r-xl md:rounded-xl overflow-hidden"
+          >
+            <Tile image={`https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_800/hdc-wears/shoot/${g.key}.jpg`} label={g.label} />
+          </div>
+        ))}
         <Link
           href="/gallery"
           className="snap-start shrink-0 w-[38vw] md:w-[18%] aspect-[4/5] rounded-xl bg-detta-navy text-white flex flex-col items-center justify-center gap-2 font-bold text-sm tracking-wide hover:opacity-90 transition-opacity"
         >
-          <span className="text-2xl leading-none">→</span>
+          <span className="text-4xl leading-none font-light">›</span>
           VIEW MORE
         </Link>
       </div>

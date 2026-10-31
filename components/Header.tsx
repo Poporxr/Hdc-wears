@@ -10,7 +10,7 @@ import { useToast } from "@/components/toast";
 
 function IconMenu() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <line x1="4" y1="7" x2="20" y2="7" />
       <line x1="4" y1="12" x2="20" y2="12" />
       <line x1="4" y1="17" x2="20" y2="17" />
@@ -20,7 +20,7 @@ function IconMenu() {
 
 function IconSearch() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <circle cx="11" cy="11" r="7" />
       <line x1="21" y1="21" x2="16.5" y2="16.5" />
     </svg>
@@ -29,7 +29,7 @@ function IconSearch() {
 
 function IconCart() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="21" r="1" />
       <circle cx="20" cy="21" r="1" />
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -39,7 +39,7 @@ function IconCart() {
 
 function IconUser() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="10" r="3.5" />
       <path d="M5.5 20a7.5 7.5 0 0 1 13 0" />
@@ -76,8 +76,8 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-white text-neutral-900 border-b border-neutral-200">
-        <div className="flex items-center justify-between px-4 h-16">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 h-12">
+          <div className="flex items-center gap-2">
             <button
               aria-label="Open menu"
               onClick={() => setDrawerOpen(true)}
@@ -109,11 +109,11 @@ export default function Header() {
             <img
               src="https://res.cloudinary.com/doc3mb9if/image/upload/hdc-wears/logo/hdc-logo-black-v10.png"
               alt="HDC Wears"
-              className="h-11 w-auto"
+              className="h-8 w-auto"
             />
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link href="/cart" aria-label="Cart" className="p-1 relative">
               <IconCart />
               {count > 0 && (
@@ -221,7 +221,7 @@ export default function Header() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setSearchOpen(false)}
           />
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-4">
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-4">
             <div className="flex items-center gap-2 border border-neutral-300 rounded-lg px-3">
               <IconSearch />
               <input

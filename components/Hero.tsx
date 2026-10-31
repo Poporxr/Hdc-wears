@@ -62,7 +62,7 @@ function DesktopSlide({ i, src }: { i: number; src: string | null }) {
             <p className="text-xs font-extrabold tracking-[0.2em] mb-3">
               {slide.eyebrow}
             </p>
-            <h1 className="font-display font-black text-5xl md:text-7xl leading-[0.95] tracking-tight whitespace-pre-line">
+            <h1 className="font-display font-black text-4xl md:text-6xl leading-[0.95] tracking-tight whitespace-pre-line">
               {slide.title}
             </h1>
             <div className="w-16 h-1 bg-black my-5" />
@@ -115,10 +115,12 @@ export default function Hero() {
   }, []);
 
   const slide = heroSlides[index % N];
-  const src = cl(
-    `hero/${slide.colorKey}-${isMobile ? "mobile" : "desktop"}`,
-    isMobile ? "f_auto,q_auto,w_600" : "f_auto,q_auto,w_1000"
-  );
+  const src =
+    slide.img ??
+    cl(
+      `hero/${slide.colorKey}-${isMobile ? "mobile" : "desktop"}`,
+      isMobile ? "f_auto,q_auto,w_600" : "f_auto,q_auto,w_1000"
+    );
 
   return (
     <section className="relative overflow-hidden bg-white">
