@@ -17,7 +17,7 @@ function MobileSlide({ i, src }: { i: number; src: string | null }) {
             <p className="text-[10px] font-extrabold tracking-[0.18em] mb-2">
               {slide.eyebrow}
             </p>
-            <h1 className="font-display font-black text-[2.75rem] leading-[0.95] tracking-tight whitespace-pre-line">
+            <h1 className="font-display font-black text-[2.1rem] leading-[0.95] tracking-tight whitespace-pre-line">
               {slide.title}
             </h1>
             <div className="w-12 h-[3px] bg-black my-3" />
@@ -54,30 +54,33 @@ function MobileSlide({ i, src }: { i: number; src: string | null }) {
 
 function DesktopSlide({ i, src }: { i: number; src: string | null }) {
   const slide = heroSlides[i % N];
+  const title = slide.title.replace(/\n/g, " ");
   return (
     <div className="w-full">
-      <div className="grid grid-cols-2 items-center">
-        <div className="px-6 py-10 md:py-20 md:pl-16 max-w-xl">
+      <div className="flex items-stretch">
+        <div className="flex-1 px-10 xl:pl-24 py-16 flex flex-col justify-center">
           <div className="animate-hero-in-left">
-            <p className="text-xs font-extrabold tracking-[0.2em] mb-3">
-              {slide.eyebrow}
-            </p>
-            <h1 className="font-display font-black text-4xl md:text-6xl leading-[0.95] tracking-tight whitespace-pre-line">
-              {slide.title}
+            <div className="flex items-center gap-3 mb-5">
+              <span className="w-8 h-px bg-black" />
+              <p className="text-sm font-extrabold tracking-[0.22em]">
+                {slide.eyebrow}
+              </p>
+            </div>
+            <h1 className="font-display font-black text-7xl xl:text-8xl leading-[0.9] tracking-tight">
+              {title}
             </h1>
-            <div className="w-16 h-1 bg-black my-5" />
-            <p className="text-neutral-600 text-[15px] leading-relaxed max-w-sm">
+            <p className="text-neutral-600 text-lg leading-relaxed max-w-lg mt-7 min-h-[3.5rem]">
               {slide.copy}
             </p>
+            <Link
+              href="/#shop"
+              className="inline-block mt-10 bg-detta-navy text-white text-base font-bold tracking-wide px-12 py-4 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              {slide.cta}
+            </Link>
           </div>
-          <Link
-            href="/#shop"
-            className="inline-block mt-7 bg-detta-navy text-white text-sm font-bold tracking-wide px-10 py-3.5 rounded-lg hover:opacity-90 transition-opacity"
-          >
-            {slide.cta}
-          </Link>
         </div>
-        <div className="relative h-72 md:h-[520px] overflow-hidden">
+        <div className="relative h-[680px] aspect-[2/3] shrink-0 overflow-hidden">
           <div className="absolute inset-0 hero-fade-left animate-hero-in-right">
             {src ? (
               /* eslint-disable-next-line @next/next/no-img-element */
