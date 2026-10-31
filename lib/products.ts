@@ -75,7 +75,7 @@ export const heroSlides = [
     title: "FRONT &\nBACK",
     colorKey: "blue",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/blue-front-back.jpg",
-    copy: "The blue colourway from both sides: the chest hit in front, the full bandana statement behind it. One tee, two first impressions.",
+    copy: "The blue colourway, front and back in one frame.",
     cta: "SHOP NOW",
   },
   {
@@ -83,7 +83,7 @@ export const heroSlides = [
     title: "CHASE\nHIGHER",
     colorKey: "purple",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/IMG_2306-cut.jpg",
-    copy: "Purple and green, side by side. Heavyweight bandana tees for the ones who dress like the dream is already theirs.",
+    copy: "Purple and green fronts, side by side.",
     cta: "SHOP NOW",
   },
   {
@@ -91,7 +91,7 @@ export const heroSlides = [
     title: "DREAM\nLOUD",
     colorKey: "black",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/IMG_2373-cut.jpg",
-    copy: "Black acid wash, purple totes in both hands. A washed heavyweight with main character energy, unmistakably HDC.",
+    copy: "Black acid wash, purple totes in hand.",
     cta: "SHOP NOW",
   },
   {
@@ -99,7 +99,7 @@ export const heroSlides = [
     title: "STAY\nTRUE",
     colorKey: "blue",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/IMG_2430-cut.jpg",
-    copy: "Seated, and still the loudest in the room. The blue front with bandana sleeve detail, worn the HDC way: easy, heavy, honest.",
+    copy: "The blue front, seated. Clean and heavy.",
     cta: "SHOP NOW",
   },
   {
@@ -107,7 +107,7 @@ export const heroSlides = [
     title: "DREAM\nCHASER",
     colorKey: "green",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/IMG_2349-cut.jpg",
-    copy: "Green on the move, the drop carried over one shoulder. Built for the chase, finished with the bandana mark.",
+    copy: "Green on the move, drop over the shoulder.",
     cta: "SHOP NOW",
   },
   {
@@ -115,7 +115,7 @@ export const heroSlides = [
     title: "NEW\nDROP",
     colorKey: "purple",
     img: "https://res.cloudinary.com/doc3mb9if/image/upload/f_auto,q_auto,w_1200/hdc-wears/shoot/IMG_2465-cut.jpg",
-    copy: "Two colourways, one frame: purple up front, blue standing guard. The Bandana Series, exactly as it should be worn.",
+    copy: "Purple up front, blue behind. One drop.",
     cta: "SHOP NOW",
   },
 ];

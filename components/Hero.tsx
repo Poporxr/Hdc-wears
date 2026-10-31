@@ -9,6 +9,7 @@ const N = heroSlides.length;
 
 function MobileSlide({ i, src }: { i: number; src: string | null }) {
   const slide = heroSlides[i % N];
+  const title = slide.title.replace(/\n/g, " ");
   return (
     <div className="w-full">
       <div className="flex items-stretch min-h-[360px]">
@@ -17,8 +18,8 @@ function MobileSlide({ i, src }: { i: number; src: string | null }) {
             <p className="text-[10px] font-extrabold tracking-[0.18em] mb-2.5">
               {slide.eyebrow}
             </p>
-            <h1 className="font-display font-black text-[2.2rem] leading-[0.98] tracking-tight max-w-[190px] whitespace-pre-line">
-              {slide.title}
+            <h1 className="font-display font-black text-[1.9rem] leading-[0.98] tracking-tight whitespace-nowrap">
+              {title}
             </h1>
             <div className="w-12 h-[3px] bg-black my-3.5" />
             <p className="text-neutral-600 text-xs leading-relaxed max-w-[190px]">
