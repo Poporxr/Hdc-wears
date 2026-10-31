@@ -11,29 +11,29 @@ function MobileSlide({ i, src }: { i: number; src: string | null }) {
   const slide = heroSlides[i % N];
   return (
     <div className="w-full">
-      <div className="flex items-stretch min-h-[340px]">
-        <div className="flex-1 pl-5 pr-0 py-8 relative z-10 -mr-12 flex flex-col justify-center">
+      <div className="flex items-stretch min-h-[360px]">
+        <div className="flex-1 pl-5 pr-0 py-9 relative z-10 -mr-12 flex flex-col justify-center">
           <div className="animate-hero-in-left">
-            <p className="text-[10px] font-extrabold tracking-[0.18em] mb-2">
+            <p className="text-[10px] font-extrabold tracking-[0.18em] mb-2.5">
               {slide.eyebrow}
             </p>
-            <h1 className="font-display font-black text-[2.1rem] leading-[0.95] tracking-tight whitespace-pre-line">
+            <h1 className="font-display font-black text-[2.2rem] leading-[0.98] tracking-tight max-w-[190px] whitespace-pre-line">
               {slide.title}
             </h1>
-            <div className="w-12 h-[3px] bg-black my-3" />
-            <p className="text-neutral-600 text-xs leading-relaxed max-w-[220px]">
+            <div className="w-12 h-[3px] bg-black my-3.5" />
+            <p className="text-neutral-600 text-xs leading-relaxed max-w-[190px]">
               {slide.copy}
             </p>
           </div>
           <Link
             href="/#shop"
-            className="inline-block mt-4 bg-detta-navy text-white text-xs font-bold tracking-wide px-7 py-3 rounded-lg w-fit"
+            className="inline-block mt-5 bg-detta-navy text-white text-xs font-bold tracking-wide px-7 py-3 rounded-lg w-fit"
           >
             {slide.cta}
           </Link>
         </div>
         <div className="w-[48%] shrink-0 relative overflow-hidden">
-          <div className="absolute inset-0 hero-fade-left animate-hero-in-right">
+          <div className="absolute inset-0 animate-hero-in-right">
             {src ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -81,7 +81,7 @@ function DesktopSlide({ i, src }: { i: number; src: string | null }) {
           </div>
         </div>
         <div className="relative h-[680px] aspect-[2/3] shrink-0 overflow-hidden">
-          <div className="absolute inset-0 hero-fade-left animate-hero-in-right">
+          <div className="absolute inset-0 animate-hero-in-right">
             {src ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
